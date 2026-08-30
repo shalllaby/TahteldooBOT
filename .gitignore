@@ -1,3 +1,4 @@
+# System & Python build exclusions
 __pycache__/
 *.pyc
 build/
@@ -11,8 +12,19 @@ temp_*.jpg
 venv/
 .idea/
 .vscode/
+
+# Secrets & OAuth tokens
 client_secret*.json
 token.json
 token.pickle
 *.pickle
 credentials.json
+
+# Desktop UI & GUI exclusions (Only Bot backend will be uploaded)
+flet_ui/
+ui/
+assets/
+app.py
+build_exe.py
+scratch/
+*.qss
