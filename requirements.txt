@@ -1,0 +1,10 @@
+python-telegram-bot>=21.0
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+requests
+python-dotenv
+pillow
+groq
+openai

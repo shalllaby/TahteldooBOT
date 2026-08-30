@@ -1,0 +1,1977 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "WP Sender Developer API",
+        "description": "Welcome to the WP Sender API documentation. This interactive console allows you to test and integrate our services into your applications.\n\n### Authentication\nMost API endpoints require authentication using an **API Key**. \n- Include the `X-API-Key` header with your personal key in every request.\n- You can also use **Bearer Token** authentication obtained after logging in through the dashboard.\n\n### Base URL\nAll requests should be made to: `http://localhost:5000/api` (or your production API URL).",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://backendapi.wpsenderx.com/api",
+            "description": "Backend API Server"
+        },
+        {
+            "url": "http://localhost:5000/api",
+            "description": "local API Server"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-Key"
+            },
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        },
+        "schemas": {
+            "ApiResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "success"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "object"
+                    }
+                }
+            },
+            "Pagination": {
+                "type": "object",
+                "properties": {
+                    "page": {
+                        "type": "integer"
+                    },
+                    "limit": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "totalPages": {
+                        "type": "integer"
+                    }
+                }
+            }
+        }
+    },
+    "security": [
+        {
+            "ApiKeyAuth": []
+        },
+        {
+            "BearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "User",
+            "description": "Profile and account management"
+        },
+        {
+            "name": "WhatsApp",
+            "description": "Connection and Webhook management"
+        },
+        {
+            "name": "Messages",
+            "description": "Sending messages and bulk jobs"
+        },
+        {
+            "name": "OTP",
+            "description": "One-Time Password services"
+        },
+        {
+            "name": "External Chats",
+            "description": "Programmatic management of external chat links"
+        }
+    ],
+    "paths": {
+        "/external-chat/create": {
+            "post": {
+                "summary": "Create a new external chat link",
+                "description": "Generate a new secure link for external visitors to chat with you via WhatsApp. Requires a strong password.",
+                "tags": [
+                    "External Chats"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "session_id",
+                                    "name",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "session_id": {
+                                        "type": "string",
+                                        "description": "The WhatsApp session ID to use for sending/receiving messages.",
+                                        "example": "user_1_..."
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "A descriptive name for this link (e.g., 'Customer Support Link').",
+                                        "example": "Sales Support"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "description": "A secure password that visitors must enter to access the chat.",
+                                        "example": "SecurePass123!"
+                                    },
+                                    "chat_id": {
+                                        "type": "string",
+                                        "description": "(Optional) Specify a target phone number or group ID to lock this link to a single conversation. If omitted, the visitor can start a new chat.",
+                                        "example": "201012345678"
+                                    },
+                                    "agent_name": {
+                                        "type": "string",
+                                        "description": "(Optional) The name of the agent that will be displayed in the chat interface.",
+                                        "example": "Ahmed"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Link created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": { "type": "boolean" },
+                                        "message": { "type": "string" },
+                                        "name": { "type": "string" },
+                                        "public_url": { "type": "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/external-chat/list": {
+            "get": {
+                "summary": "List all external chat links",
+                "tags": [
+                    "External Chats"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": { "type": "boolean" },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": { "type": "integer" },
+                                                    "name": { "type": "string" },
+                                                    "session_id": { "type": "string" },
+                                                    "session_name": { "type": "string" },
+                                                    "public_url": { "type": "string" },
+                                                    "is_active": { "type": "boolean" }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/stats": {
+            "get": {
+                "summary": "Get account usage statistics",
+                "tags": [
+                    "User"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "subscription": {
+                                                    "type": "object",
+                                                    "description": "Current subscription plan details"
+                                                },
+                                                "messages": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total_messages": {
+                                                            "type": "integer"
+                                                        },
+                                                        "successful": {
+                                                            "type": "integer"
+                                                        },
+                                                        "failed": {
+                                                            "type": "integer"
+                                                        }
+                                                    }
+                                                },
+                                                "otps": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total_otps": {
+                                                            "type": "integer"
+                                                        },
+                                                        "verified": {
+                                                            "type": "integer"
+                                                        },
+                                                        "expired": {
+                                                            "type": "integer"
+                                                        }
+                                                    }
+                                                },
+                                                "contacts": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "description": "Current saved contacts count"
+                                                        },
+                                                        "limit": {
+                                                            "type": "integer",
+                                                            "description": "Maximum allowed contacts based on plan"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/otp/send": {
+            "post": {
+                "summary": "Send an OTP message",
+                "tags": [
+                    "OTP"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "recipient"
+                                ],
+                                "properties": {
+                                    "recipient": {
+                                        "type": "string",
+                                        "description": "Phone number with country code",
+                                        "example": "201012345678"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "description": "Optional custom template. If omitted, the saved template from your dashboard settings will be used. Must include {OTP} placeholder if provided.",
+                                        "example": "Your security code is {OTP}. Do not share it."
+                                    },
+                                    "session_id": {
+                                        "type": "string",
+                                        "description": "Optional: Specific Session ID to send from. Aliases: sessionId.",
+                                        "example": "user_17_..."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP Sent"
+                    }
+                }
+            }
+        },
+        "/otp/verify": {
+            "post": {
+                "summary": "Verify an OTP code",
+                "tags": [
+                    "OTP"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "recipient",
+                                    "otp_code"
+                                ],
+                                "properties": {
+                                    "recipient": {
+                                        "type": "string",
+                                        "example": "201012345678"
+                                    },
+                                    "otp_code": {
+                                        "type": "string",
+                                        "example": "1234"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification Result"
+                    }
+                }
+            }
+        },
+        "/messages/send": {
+            "post": {
+                "summary": "Send a single or bulk message (supports media)",
+                "description": "Send text or media messages. Use `application/json` for plain text and `multipart/form-data` for file uploads.",
+                "tags": [
+                    "Messages"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "recipients"
+                                ],
+                                "properties": {
+                                    "recipients": {
+                                        "oneOf": [
+                                            {
+                                                "type": "string",
+                                                "example": "201012345678"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "example": [
+                                                    "201012345678",
+                                                    "201087654321"
+                                                ]
+                                            }
+                                        ],
+                                        "description": "Recipient number(s). Can be a string or array."
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "description": "Message text content."
+                                    },
+                                    "contentType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "string",
+                                            "MessageMedia",
+                                            "MessageMediaFromURL"
+                                        ],
+                                        "default": "string",
+                                        "description": "Type of content to send. Default is 'string' for text messages."
+                                    },
+                                    "content": {
+                                        "oneOf": [
+                                            {
+                                                "type": "string",
+                                                "description": "For 'MessageMediaFromURL', this is the direct URL string."
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "mimetype": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "image/jpeg",
+                                                            "image/png",
+                                                            "application/pdf",
+                                                            "video/mp4",
+                                                            "audio/mpeg",
+                                                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                                        ],
+                                                        "description": "نوع الملف (MIME Type). الحدود القصوى للحجم: الصور (JPEG/PNG) بحد أقصى 3MB، ملفات PDF بحد أقصى 8MB، الملفات الأخرى (Excel, Word, Video) بحد أقصى 10MB.",
+                                                        "example": "image/jpeg"
+                                                    },
+                                                    "data": {
+                                                        "type": "string",
+                                                        "description": "Base64 encoded file data"
+                                                    },
+                                                    "filename": {
+                                                        "type": "string",
+                                                        "example": "image.jpg"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "description": "URL for MessageMediaFromURL object format"
+                                                    }
+                                                }
+                                            }
+                                        ],
+                                        "description": "Content payload. Required for MessageMedia and MessageMediaFromURL."
+                                    },
+                                    "sender_number": {
+                                        "type": "string",
+                                        "description": "Optional: Specific Session ID or phone number to send from."
+                                    },
+                                    "no_duplication": {
+                                        "type": "boolean",
+                                        "description": "If true, prevents sending if the absolute last message to this recipient was identical. / منع تكرار الإرسال إذا كانت آخر رسالة متطابقة.",
+                                        "example": false
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "text_message": {
+                                    "summary": "1. إرسال رسالة نصية (Text Message)",
+                                    "description": "إرسال رسالة نصية بسيطة.",
+                                    "value": {
+                                        "recipients": "201012345678",
+                                        "message": "Hello World",
+                                        "contentType": "string",
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "no_duplication": false
+                                    }
+                                },
+                                "file_from_url": {
+                                    "summary": "2. إرسال ملف عبر رابط (Send File via URL)",
+                                    "description": "إرسال ملف عن طريق توفير رابط مباشر (HTTP Link). سيقوم النظام بتحميل الملف وتحويله وإرساله تلقائياً.",
+                                    "value": {
+                                        "recipients": "201012345678",
+                                        "contentType": "MessageMediaFromURL",
+                                        "content": "https://example.com/invoice.pdf",
+                                        "message": "Here is your invoice (Caption)",
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "no_duplication": false
+                                    }
+                                },
+                                "file_base64": {
+                                    "summary": "3. إرسال ملف عبر كود (Send File via Base64)",
+                                    "description": "إرسال ملف عن طريق توفير بيانات الملف مشفرة بصيغة Base64 مباشرة.",
+                                    "value": {
+                                        "recipients": "201012345678",
+                                        "contentType": "MessageMedia",
+                                        "content": {
+                                            "mimetype": "image/jpeg",
+                                            "data": "JVBERi0xLjQKJ...",
+                                            "filename": "image.jpg"
+                                        },
+                                        "message": "Image Caption",
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "no_duplication": false
+                                    }
+                                }
+                            }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "recipients",
+                                    "file"
+                                ],
+                                "properties": {
+                                    "recipients": {
+                                        "type": "string",
+                                        "description": "Recipient number(s)."
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "description": "Caption."
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "File to upload."
+                                    },
+                                    "sessionId": {
+                                        "type": "string",
+                                        "description": "Session ID"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Message Queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/bulk-job": {
+            "post": {
+                "summary": "Create a bulk messaging job",
+                "tags": [
+                    "Messages"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "recipients",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "recipients": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "201012345678",
+                                            "201087654321"
+                                        ]
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Hello everyone!"
+                                    },
+                                    "sender_number": {
+                                        "type": "string",
+                                        "description": "Optional: Specific Session ID or phone number to send from. If omitted, uses your primary connected session.",
+                                        "example": "session_abc123xyz"
+                                    },
+                                    "sessionId": {
+                                        "type": "string",
+                                        "description": "Alias for sender_number. Specific Session ID to send from.",
+                                        "example": "user_17_..."
+                                    },
+                                    "session_id": {
+                                        "type": "string",
+                                        "description": "Alias for sender_number. Specific Session ID to send from."
+                                    },
+                                    "use_load_balancing": {
+                                        "type": "boolean",
+                                        "description": "If true, distributes messages among all connected sessions (overrides sessionId).",
+                                        "example": false
+                                    },
+                                    "no_duplication": {
+                                        "type": "boolean",
+                                        "description": "If true, prevents sending duplicate messages to the same recipient within this job. / منع تكرار الرسائل المتطابقة لنفس المستلم ضمن هذه المهمة.",
+                                        "example": false
+                                    }
+                                },
+                                "example": {
+                                    "recipients": [
+                                        "201012345678",
+                                        "201087654321"
+                                    ],
+                                    "message": "Hello everyone!",
+                                    "sessionId": "user_17_...",
+                                    "no_duplication": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Job Created"
+                    }
+                }
+            }
+        },
+        "/messages/balance": {
+            "get": {
+                "summary": "Get message balance and quota",
+                "description": "Returns current message usage, remaining quota, and subscription limits",
+                "tags": [
+                    "Messages"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Balance information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "plan_type": {
+                                                    "type": "string",
+                                                    "example": "Gold"
+                                                },
+                                                "service_type": {
+                                                    "type": "string",
+                                                    "example": "Both"
+                                                },
+                                                "message_limit": {
+                                                    "type": "integer",
+                                                    "example": 10000
+                                                },
+                                                "messages_used": {
+                                                    "type": "integer",
+                                                    "example": 1250
+                                                },
+                                                "messages_remaining": {
+                                                    "type": "integer",
+                                                    "example": 8750
+                                                },
+                                                "reset_date": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "max_webhooks": {
+                                                    "type": "integer",
+                                                    "description": "Maximum allowed Real-time WebSockets (and HTTP Webhooks) based on plan",
+                                                    "example": 5
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/stats": {
+            "get": {
+                "summary": "Get message statistics",
+                "description": "Returns statistics about sent messages (total, successful, failed)",
+                "tags": [
+                    "Messages"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message statistics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/history": {
+            "get": {
+                "summary": "Get message history",
+                "description": "Returns paginated list of sent messages",
+                "tags": [
+                    "Messages"
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message history with pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "messages": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "recipient": {
+                                                                "type": "string"
+                                                            },
+                                                            "message": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "pagination": {
+                                                    "$ref": "#/components/schemas/Pagination"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/jobs": {
+            "get": {
+                "summary": "Get all bulk messaging jobs",
+                "description": "Returns a list of all bulk messaging jobs for the authenticated user",
+                "tags": [
+                    "Messages"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of jobs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "jobs": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "job_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "pending",
+                                                                    "running",
+                                                                    "paused",
+                                                                    "completed",
+                                                                    "failed",
+                                                                    "cancelled"
+                                                                ]
+                                                            },
+                                                            "total_recipients": {
+                                                                "type": "integer"
+                                                            },
+                                                            "sent_count": {
+                                                                "type": "integer"
+                                                            },
+                                                            "failed_count": {
+                                                                "type": "integer"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/jobs/{jobId}": {
+            "get": {
+                "summary": "Get job status",
+                "description": "Returns detailed status and progress of a specific bulk messaging job",
+                "tags": [
+                    "Messages"
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Job ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/jobs/{jobId}/cancel": {
+            "post": {
+                "summary": "Cancel a job",
+                "description": "Cancels a running or pending bulk messaging job",
+                "tags": [
+                    "Messages"
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Job ID to cancel"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job cancelled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/jobs/{jobId}/resume": {
+            "post": {
+                "summary": "Resume a paused job",
+                "description": "Resumes a paused or failed bulk messaging job from where it left off",
+                "tags": [
+                    "Messages"
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Job ID to resume"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Job resumed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/send-button": {
+            "post": {
+                "summary": "Send WhatsApp Button/List Message (Unified API)",
+                "description": "Send interactive WhatsApp messages. Supports **two formats**:\\n\\n1. **Button Messages** (Legacy): Up to 3 clickable buttons\\n2. **List Messages** (New): Sections with multiple options and descriptions\\n\\nThe API automatically detects which format to use based on the request body. The session sleep system automatically wakes sleeping sessions before sending.",
+                "tags": [
+                    "Messages"
+                ],
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "type": "object",
+                                        "title": "Button Message (Legacy - Max 3 Buttons)",
+                                        "required": [
+                                            "recipient",
+                                            "text",
+                                            "buttons"
+                                        ],
+                                        "properties": {
+                                            "sessionId": {
+                                                "type": "string",
+                                                "description": "Optional: Specific Session ID. If not provided, uses your default session",
+                                                "example": "user_1_000000000000000000000000000"
+                                            },
+                                            "recipient": {
+                                                "type": "string",
+                                                "description": "Phone number with country code (no +)",
+                                                "example": "201012345678"
+                                            },
+                                            "text": {
+                                                "type": "string",
+                                                "description": "Main message text (what the user sees above the buttons)",
+                                                "example": "Welcome! Please choose an option:"
+                                            },
+                                            "buttons": {
+                                                "type": "array",
+                                                "description": "Array of 1-3 buttons",
+                                                "minItems": 1,
+                                                "maxItems": 3,
+                                                "items": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "buttonId",
+                                                        "buttonText"
+                                                    ],
+                                                    "properties": {
+                                                        "buttonId": {
+                                                            "type": "string",
+                                                            "description": "Unique button identifier",
+                                                            "example": "btn_option_1"
+                                                        },
+                                                        "buttonText": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "displayText": {
+                                                                    "type": "string",
+                                                                    "description": "Text shown on the button",
+                                                                    "example": "Get Started"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": {
+                                                            "type": "integer",
+                                                            "description": "Button type (always 1 for reply buttons)",
+                                                            "example": 1
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "footer": {
+                                                "type": "string",
+                                                "description": "Optional footer text below the buttons",
+                                                "example": "Powered by WP Sender"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "object",
+                                        "title": "List Message (New - Sections with Options)",
+                                        "required": [
+                                            "recipient",
+                                            "buttonText",
+                                            "title",
+                                            "sections"
+                                        ],
+                                        "properties": {
+                                            "sessionId": {
+                                                "type": "string",
+                                                "description": "Optional: Specific Session ID. If not provided, uses your default session",
+                                                "example": "user_1_000000000000000000000000000"
+                                            },
+                                            "recipient": {
+                                                "type": "string",
+                                                "description": "Phone number with country code (no +) or chatId format",
+                                                "example": "201012345678"
+                                            },
+                                            "chatId": {
+                                                "type": "string",
+                                                "description": "Alternative to recipient: WhatsApp chat ID format",
+                                                "example": "201012345678@c.us"
+                                            },
+                                            "buttonText": {
+                                                "type": "string",
+                                                "description": "Text shown on the list button (e.g., 'View Options', 'Choose One')",
+                                                "example": "اختر خياراً"
+                                            },
+                                            "title": {
+                                                "type": "string",
+                                                "description": "Main title/header of the message",
+                                                "example": "معلومات أساسية"
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                                "description": "Optional: Description text below the title",
+                                                "example": "وصف الرسالة (اختياري)"
+                                            },
+                                            "footer": {
+                                                "type": "string",
+                                                "description": "Optional: Footer text at the bottom",
+                                                "example": "تذييل الرسالة"
+                                            },
+                                            "sections": {
+                                                "type": "array",
+                                                "description": "Array of sections, each containing multiple options",
+                                                "minItems": 1,
+                                                "items": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "title",
+                                                        "options"
+                                                    ],
+                                                    "properties": {
+                                                        "title": {
+                                                            "type": "string",
+                                                            "description": "Section title",
+                                                            "example": "القسم 1"
+                                                        },
+                                                        "options": {
+                                                            "type": "array",
+                                                            "description": "Options within this section",
+                                                            "minItems": 1,
+                                                            "items": {
+                                                                "type": "object",
+                                                                "required": [
+                                                                    "id",
+                                                                    "text"
+                                                                ],
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string",
+                                                                        "description": "Unique option identifier",
+                                                                        "example": "1"
+                                                                    },
+                                                                    "text": {
+                                                                        "type": "string",
+                                                                        "description": "Option display text",
+                                                                        "example": "ضحى"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": "string",
+                                                                        "description": "Optional: Option description/subtitle",
+                                                                        "example": "وصف الخيار الأول"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "examples": {
+                                "button_simple_menu": {
+                                    "summary": "1. أزرار بسيطة (Legacy Button Message)",
+                                    "description": "رسالة تحتوي على زرّين بسيطين (الهيكل القديم)",
+                                    "value": {
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "recipient": "201012345678",
+                                        "text": "Would you like to continue?",
+                                        "buttons": [
+                                            {
+                                                "buttonId": "yes",
+                                                "buttonText": {
+                                                    "displayText": "Yes, Continue"
+                                                },
+                                                "type": 1
+                                            },
+                                            {
+                                                "buttonId": "no",
+                                                "buttonText": {
+                                                    "displayText": "No, Cancel"
+                                                },
+                                                "type": 1
+                                            }
+                                        ],
+                                        "footer": "Choose wisely"
+                                    }
+                                },
+                                "button_three_options": {
+                                    "summary": "2. قائمة 3 أزرار (Legacy 3 Buttons)",
+                                    "description": "رسالة تحتوي على 3 أزرار (الحد الأقصى للهيكل القديم)",
+                                    "value": {
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "recipient": "201012345678",
+                                        "text": "How can we help you today?",
+                                        "buttons": [
+                                            {
+                                                "buttonId": "support",
+                                                "buttonText": {
+                                                    "displayText": "Technical Support"
+                                                },
+                                                "type": 1
+                                            },
+                                            {
+                                                "buttonId": "sales",
+                                                "buttonText": {
+                                                    "displayText": "Sales Inquiry"
+                                                },
+                                                "type": 1
+                                            },
+                                            {
+                                                "buttonId": "billing",
+                                                "buttonText": {
+                                                    "displayText": "Billing Questions"
+                                                },
+                                                "type": 1
+                                            }
+                                        ]
+                                    }
+                                },
+                                "list_single_section": {
+                                    "summary": "3. قائمة بسيطة (New List Message - Single Section)",
+                                    "description": "رسالة قائمة تحتوي على قسم واحد مع عدة خيارات (الهيكل الجديد)",
+                                    "value": {
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "recipient": "201012345678",
+                                        "buttonText": "اختر خياراً",
+                                        "title": "معلومات أساسية",
+                                        "description": "يرجى اختيار أحد الخيارات التالية",
+                                        "footer": "تذييل الرسالة",
+                                        "sections": [
+                                            {
+                                                "title": "القسم 1",
+                                                "options": [
+                                                    {
+                                                        "id": "1",
+                                                        "text": "ضحى",
+                                                        "description": "الخيار الأول"
+                                                    },
+                                                    {
+                                                        "id": "2",
+                                                        "text": "خيار إضافي",
+                                                        "description": "وصف الخيار الإضافي"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                },
+                                "list_multi_sections": {
+                                    "summary": "4. قائمة متعددة الأقسام (New List Message - Multiple Sections)",
+                                    "description": "رسالة قائمة تحتوي على عدة أقسام، كل قسم يحتوي على خيارات متعددة",
+                                    "value": {
+                                        "sessionId": "user_1_000000000000000000000000000",
+                                        "recipient": "201012345678",
+                                        "buttonText": "عرض القائمة",
+                                        "title": "خدماتنا",
+                                        "description": "اختر الخدمة المناسبة لك",
+                                        "footer": "نحن هنا لمساعدتك",
+                                        "sections": [
+                                            {
+                                                "title": "الخدمات التقنية",
+                                                "options": [
+                                                    {
+                                                        "id": "tech_support",
+                                                        "text": "الدعم الفني",
+                                                        "description": "تواصل مع فريق الدعم الفني"
+                                                    },
+                                                    {
+                                                        "id": "tech_consultation",
+                                                        "text": "استشارة تقنية",
+                                                        "description": "احجز جلسة استشارية"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "title": "خدمات المبيعات",
+                                                "options": [
+                                                    {
+                                                        "id": "pricing",
+                                                        "text": "الأسعار والباقات",
+                                                        "description": "تعرف على خطط التسعير"
+                                                    },
+                                                    {
+                                                        "id": "demo",
+                                                        "text": "طلب عرض توضيحي",
+                                                        "description": "احصل على عرض توضيحي مجاني"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "title": "خدمات أخرى",
+                                                "options": [
+                                                    {
+                                                        "id": "billing",
+                                                        "text": "الفوترة والدفع",
+                                                        "description": "استفسارات الدفع والفواتير"
+                                                    },
+                                                    {
+                                                        "id": "account",
+                                                        "text": "إدارة الحساب",
+                                                        "description": "تحديث معلومات الحساب"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Message sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Button message sent successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "messageLogId": {
+                                                    "type": "integer",
+                                                    "description": "ID of the message log entry"
+                                                },
+                                                "quotaRemaining": {
+                                                    "type": "string",
+                                                    "description": "Remaining message quota"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - validation error (e.g., missing required fields, invalid structure)"
+                    },
+                    "403": {
+                        "description": "Forbidden - quota exceeded or no active subscription"
+                    },
+                    "404": {
+                        "description": "Session not found"
+                    },
+                    "503": {
+                        "description": "Service unavailable - failed to wake sleeping session"
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/webhook-url/set": {
+            "post": {
+                "summary": "Configure HTTP Webhook URL (n8n/Zapier)",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "sessionId",
+                                    "webhookUrl"
+                                ],
+                                "properties": {
+                                    "sessionId": {
+                                        "type": "string"
+                                    },
+                                    "webhookUrl": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://n8n.example.com/webhook/..."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Configured"
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/check-registration": {
+            "get": {
+                "summary": "Check if a phone number is registered on WhatsApp",
+                "description": "Verifies if the provided phone number exists on WhatsApp. This check uses a connected WhatsApp session. If no `sessionId` is provided, the system defaults to your primary connected session.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "number",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Phone number to check (with country code, e.g., 201012345678)",
+                        "example": "201032648474"
+                    },
+                    {
+                        "name": "sessionId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Optional: Specific session ID to use for the check. If omitted, uses the first connected session.",
+                        "example": "session_abc123..."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Check result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "number": {
+                                                    "type": "string",
+                                                    "example": "201032648474"
+                                                },
+                                                "exists": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters"
+                    },
+                    "403": {
+                        "description": "No connected session found"
+                    },
+                    "503": {
+                        "description": "Session disconnected or WhatsApp API error"
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/typing": {
+            "post": {
+                "summary": "Simulate typing state in chat",
+                "description": "Simulates a typing status in the specified WhatsApp chat. If no sessionId is provided, the system will automatically use your first connected session. This status lasts for approximately 25 seconds or until a message is sent.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "chatId"
+                                ],
+                                "properties": {
+                                    "chatId": {
+                                        "type": "string",
+                                        "description": "Recipient WhatsApp ID with @c.us",
+                                        "example": "201012345678@c.us"
+                                    },
+                                    "sessionId": {
+                                        "type": "string",
+                                        "description": "Optional: Session ID. If omitted, uses first connected session.",
+                                        "example": "session_abc123..."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Typing state triggered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/list": {
+            "get": {
+                "summary": "List all WhatsApp sessions with statistics",
+                "description": "Returns a list of all your WhatsApp sessions, including their connection status and usage statistics (messages sent, successful, failed, and OTP counts).",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of sessions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "session_id": {
+                                                        "type": "string"
+                                                    },
+                                                    "phone_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "stats": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "messages": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "total": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "success": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "failed": {
+                                                                        "type": "integer"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "otps": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "total": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "success": {
+                                                                        "type": "integer"
+                                                                    },
+                                                                    "failed": {
+                                                                        "type": "integer"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/{sessionId}/details": {
+            "get": {
+                "summary": "Get specific session details and statistics",
+                "description": "Returns details for a specific WhatsApp session, including connection status and usage statistics.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The numeric ID or the UUID (session_id) of the session",
+                        "example": "session_abc123..."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found"
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/create": {
+            "post": {
+                "summary": "Create a new WhatsApp session",
+                "description": "Starts the process of creating a new WhatsApp session. Sub-accounts can also use this if they haven't reached their session limit.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Session creation initiated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/{sessionId}": {
+            "delete": {
+                "summary": "Delete a WhatsApp session (Soft-Delete)",
+                "description": "Disconnects the session from WhatsApp and marks it as deleted in the system. The record remains in the database for history but is hidden and unusable.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The numeric ID or the UUID (session_id) of the session"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session deleted successfully"
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/{sessionId}/reconnect": {
+            "post": {
+                "summary": "Reconnect a disconnected session",
+                "description": "Attempts to restart a disconnected WhatsApp session. This is useful if the session has stopped or failed to start initially.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The numeric ID or the UUID (session_id) of the session"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reconnection request accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/{sessionId}/qr": {
+            "get": {
+                "summary": "Get session QR code (Image or Data)",
+                "description": "Retrieves the QR code for a session. Supports multiple output formats: binary image, base64 data URL, or raw string. Base64 and Image formats are fetched from our secure backend proxy to ensure privacy.\n\n### Authentication for Images\nTo use this endpoint in an `<img>` tag, you can pass the API key or token as a query parameter:\n`?output=image&apiKey=YOUR_API_KEY`",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "The numeric ID or the UUID (session_id) of the session"
+                    },
+                    {
+                        "name": "output",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "base64",
+                                "raw"
+                            ],
+                            "default": "raw"
+                        },
+                        "description": "Output format. 'image' returns binary PNG, 'base64' returns JSON with base64 dataUrl, 'raw' returns the QR string."
+                    },
+                    {
+                        "name": "apiKey",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Optional: API Key for authentication (useful for <img> tags)"
+                    },
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Optional: JWT Token for authentication (useful for <img> tags)"
+                    },
+                    {
+                        "name": "refresh",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "description": "Force refresh the QR code from the WhatsApp API"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "QR Code data or Image",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "description": "Raw QR string (for output=raw)"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "dataUrl": {
+                                                            "type": "string",
+                                                            "description": "Base64 encoded PNG (for output=url)"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "image/png": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "QR code not available yet (session might be connecting or already connected)"
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/{sessionId}/pairing-code": {
+            "post": {
+                "summary": "Request a pairing code",
+                "description": "Requests a phone number pairing code for a session that is in the 'waiting' or 'qrcode' status.",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "phoneNumber"
+                                ],
+                                "properties": {
+                                    "phoneNumber": {
+                                        "type": "string",
+                                        "example": "201012345678"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pairing code generated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "example": "ABCDE123"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/whatsapp-session/{sessionId}/status": {
+            "get": {
+                "summary": "Check session connection status",
+                "description": "Returns the current status of the WhatsApp session (e.g., 'connected', 'disconnected', 'qrcode', 'stopped').",
+                "tags": [
+                    "WhatsApp"
+                ],
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Current status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "connected"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/recipient-contacts": {
+            "get": {
+                "summary": "List saved contacts",
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "group_name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of contacts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "contacts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "groups": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "pagination": {
+                                                    "$ref": "#/components/schemas/Pagination"
+                                                },
+                                                "contact_limit": {
+                                                    "type": "integer",
+                                                    "description": "Your current contact number limit"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
