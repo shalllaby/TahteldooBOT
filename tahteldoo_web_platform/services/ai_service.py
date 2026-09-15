@@ -855,6 +855,17 @@ Identify the subject's gender and entity type accurately:
 CRITICAL: Maintain absolute pronoun consistency! Never mix male and female pronouns for the same person.
 
 ============================================================
+AUTOMATIC ENTITY TYPE & GENDER DETECTION (استنتاج صفة المخاطبة تلقائياً)
+============================================================
+
+The AI must accurately determine the "entity_type" of the subject from the source notes:
+- "female": If the subject is a female individual (دكتورة، أستاذة، مهندسة، صيدلانية، معالجة، مدربة، سيدة، أو اسم أنثى).
+- "plural": If the subject is a company, clinic, academy, medical center, hospital, brand, lab, team, or institution (عيادة، عيادات، مركز، مستشفى، أكاديمية، شركة، مؤسسة، منصة، فريق...).
+- "male": If the subject is a male individual (دكتور، أستاذ، مهندس، صيدلي، رجل، أو اسم مذكر) or general male default.
+
+Set "entity_type" in the JSON output strictly to one of: "male", "female", or "plural".
+
+============================================================
 HONORIFIC TITLES PRESERVATION RULE (VERY IMPORTANT)
 ============================================================
 
@@ -1480,6 +1491,26 @@ Return JSON only.
         parsed_data[
             "client_phone"
         ] = client_phone
+
+        # ======================================================
+        # NORMALIZE ENTITY TYPE (LLM AUTO-DETECTION)
+        # ======================================================
+        raw_entity = str(parsed_data.get("entity_type", "")).strip().lower()
+        if raw_entity in ["female", "مؤنث", "أنثى"]:
+            final_entity = "female"
+        elif raw_entity in ["plural", "group", "جمع", "جهة", "مؤسسة", "شركة", "مركز", "عيادة", "كيان"]:
+            final_entity = "plural"
+        elif raw_entity in ["male", "مذكر", "رجل"]:
+            final_entity = "male"
+        else:
+            try:
+                from services.whatsapp_service import detect_entity_type
+                detected = detect_entity_type(actual_name or client_name or actual_raw_notes)
+                final_entity = "plural" if detected in ["group", "plural"] else detected
+            except Exception:
+                final_entity = "male"
+
+        parsed_data["entity_type"] = final_entity
 
         # ======================================================
         # NORMALIZE LABELS

@@ -249,7 +249,7 @@ class ArticleSaveRequest(BaseModel):
     final_html: Optional[str] = ""
     local_image_path: Optional[str] = ""
     remote_image_url: Optional[str] = ""
-    entity_type: Optional[str] = "plural"
+    entity_type: Optional[str] = None
     is_draft: Optional[bool] = False
 
 class ArticlePublishRequest(BaseModel):
@@ -261,14 +261,14 @@ class ArticlePublishRequest(BaseModel):
     local_image_path: Optional[str] = ""
     client_name: Optional[str] = ""
     client_phone: Optional[str] = ""
-    entity_type: Optional[str] = "plural"
+    entity_type: Optional[str] = None
     is_draft: Optional[bool] = False
 
 class DirectPublishRequest(BaseModel):
     raw_notes: str
     image_url: Optional[str] = ""
     local_image_path: Optional[str] = ""
-    entity_type: Optional[str] = "plural"
+    entity_type: Optional[str] = None
 
 class ReporterRegisterRequest(BaseModel):
     name: str
@@ -1416,9 +1416,12 @@ def direct_one_click_publish(payload: DirectPublishRequest, user: dict = Depends
         wa_url = ""
         if client_phone:
             c_name = client_name or "العميل"
-            e_type = payload.entity_type
+            # Auto-detect entity type from LLM output (with rule-based fallback)
+            e_type = ai_data.get("entity_type") or getattr(payload, "entity_type", None)
             if not e_type or e_type not in ["male", "female", "plural"]:
-                e_type = whatsapp_service.detect_entity_type(c_name)
+                e_type = whatsapp_service.detect_entity_type(c_name or payload.raw_notes)
+            if e_type in ["group", "plural"]:
+                e_type = "plural"
             wa_text = whatsapp_service.format_message(name=c_name, post_url=post_url, entity_type=e_type)
             wa_url = whatsapp_service.generate_whatsapp_click_link(phone=client_phone, name=c_name, post_url=post_url, entity_type=e_type)
             db.save_whatsapp_log(art_id, client_phone, client_name, wa_text, "READY")

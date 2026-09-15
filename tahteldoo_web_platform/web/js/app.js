@@ -578,8 +578,6 @@ function initCreateView() {
       return;
     }
 
-    const entityType = document.querySelector('input[name="create-entity-type"]:checked')?.value || 'plural';
-
     btnDirectPub.disabled = true;
     btnDirectPub.innerHTML = '⏳ جاري الصياغة والنشر المباشر...';
 
@@ -590,7 +588,6 @@ function initCreateView() {
       const res = await apiCall('/api/articles/direct-publish', 'POST', {
         raw_notes: text,
         local_image_path: State.uploadedImagePath,
-        entity_type: entityType,
       });
 
       syncPublishCooldown();

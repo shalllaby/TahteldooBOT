@@ -6,5 +6,8 @@ google-auth-httplib2
 requests
 python-dotenv
 pillow
-groq
 openai
+fastapi
+uvicorn[standard]
+python-multipart
+websockets

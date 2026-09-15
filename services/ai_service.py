@@ -3,9 +3,9 @@ import re
 import time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, Future
-from typing import List, Dict, Any, Callable, Optional, Tuple
+from difflib import SequenceMatcher
+from typing import List, Dict, Any, Callable, Optional, Tuple, Set
 
-from groq import Groq
 try:
     from openai import OpenAI
 except ImportError:
@@ -18,7 +18,7 @@ from core.logger import logger
 class AIService:
     """
     AI service for generating professional Arabic journalistic articles
-    for "جريدة تحت الضوء الإخبارية".
+    for "جريدة تحت الضوء الإخبارية" using Z.AI (GLM) as the sole LLM provider.
     """
 
     NEWSPAPER_NAME = "جريدة تحت الضوء الإخبارية"
@@ -27,8 +27,8 @@ class AIService:
     # ARTICLE LENGTH
     # ==========================================================
 
-    MIN_ARTICLE_CHARS = 1200
-    MAX_ARTICLE_CHARS = 6000
+    MIN_ARTICLE_CHARS = 1400
+    MAX_ARTICLE_CHARS = 3500
 
     # ==========================================================
     # ALLOWED EDITORIAL CATEGORIES / LABELS (STRICT LIST OF 7)
@@ -45,20 +45,44 @@ class AIService:
     ]
 
     # ==========================================================
-    # EXAMPLES & FALLBACK CONFIG
+    # EXAMPLES & FALLBACK CONFIG (Z.AI GLM MODELS ONLY)
     # ==========================================================
 
     EXAMPLES_FILENAME = "article_examples.json"
 
     FALLBACK_MODELS = [
         "glm-4.7-flash",
-        "GLM-4.7-Flash",
         "glm-4-flash",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen-2.5-72b-instruct:free",
-        "openai/gpt-oss-120b",
-        "gemini-3.6-flash",
-        "openai/gpt-oss-20b"
+        "glm-4-air",
+        "glm-4-plus"
+    ]
+
+    # ==========================================================
+    # REPETITION PREVENTION & DIVERSE JOURNALISTIC TRANSITIONS
+    # ==========================================================
+
+    REPETITIVE_PRAISE_PATTERNS = [
+        r"من القامات البارزة والمشهود لها بالكفاءة والتميز",
+        r"من القامات البارزة والمشهود لها",
+        r"من القامات البارزة",
+        r"صاحب رؤية ثاقبة وبصمة استثنائية",
+        r"صاحب بصمة استثنائية",
+        r"بصمة استثنائية",
+        r"رؤية ثاقبة",
+        r"علامة مضيئة وإضافة نوعية",
+        r"علامة مضيئة",
+        r"نموذج يُحتذى به في التفاني والاحترافية والريادة",
+        r"نموذج يُحتذى به",
+        r"سيرة مهنية حافلة بالعطاء",
+    ]
+
+    ALTERNATIVE_TRANSITIONS = [
+        "وفي سياق متصل، ",
+        "وعلى صعيد موازٍ، ",
+        "وحول آليات العمل والمنهجية، ",
+        "ويرتكز هذا التوجه على ",
+        "وبالانتقال إلى الجانب التطبيقي، ",
+        "وفيما يتعلق بمتطلبات الفئة المستهدفة، ",
     ]
 
     @staticmethod
@@ -78,103 +102,41 @@ class AIService:
     def __init__(
         self,
         api_key: str = None,
-        model: str = None
+        model: str = None,
+        primary_zai_key: str = None
     ):
-        self.api_key = (
-            api_key
-            or Config.GROQ_API_KEY
-        )
-
-        self.model = (
+        # Z.AI / GLM Integration (Dedicated Personal Key Architecture)
+        self.zai_base_url = getattr(Config, "ZAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/")
+        self.zai_model = (
             model
             or getattr(Config, "ZAI_MODEL", "")
-            or Config.GROQ_MODEL
+            or "glm-4.7-flash"
         )
+        self.model = self.zai_model
 
-        self.client = (
-            Groq(api_key=self.api_key)
-            if self.api_key
-            else None
-        )
+        # Only one dedicated key per instance/journalist - No shared multi-key rotation
+        if primary_zai_key and primary_zai_key.strip():
+            target_key = primary_zai_key.strip()
+            self.zai_keys = [target_key]
+        elif api_key and api_key.strip():
+            target_key = api_key.strip()
+            self.zai_keys = [target_key]
+        else:
+            default_key = getattr(Config, "ZAI_API_KEY", "") or getattr(Config, "TELEGRAM_ZAI_API_KEY", "")
+            self.zai_keys = [default_key.strip()] if default_key and default_key.strip() else []
 
-        self.groq_api_key_2 = getattr(Config, "GROQ_API_KEY_2", "")
-        self.groq_client_2 = None
-        if Groq and self.groq_api_key_2:
-            try:
-                self.groq_client_2 = Groq(api_key=self.groq_api_key_2)
-                logger.info("تم تفعيل مفتاح Groq الاحتياطي الثاني (GROQ_API_KEY_2) بنجاح.")
-            except Exception as g2_err:
-                logger.warning(f"تعذر تهيئة مفتاح Groq الثاني: {g2_err}")
+        self.api_key = self.zai_keys[0] if self.zai_keys else None
 
-        # Z.AI / GLM Integration (Primary - Multi-Key Rotation)
-        self.zai_base_url = getattr(Config, "ZAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/")
-        self.zai_model = getattr(Config, "ZAI_MODEL", "glm-4.7-flash")
-        
-        self.zai_keys = [
-            getattr(Config, "ZAI_API_KEY", ""),
-            getattr(Config, "ZAI_API_KEY_2", ""),
-            getattr(Config, "ZAI_API_KEY_3", "")
-        ]
         self.zai_clients = []
-        if OpenAI:
-            for idx, k in enumerate(self.zai_keys, 1):
-                if k.strip():
-                    try:
-                        c = OpenAI(api_key=k.strip(), base_url=self.zai_base_url)
-                        self.zai_clients.append(c)
-                        logger.info(f"تم تفعيل مفتاح Z.AI (GLM) رقم {idx} بنجاح.")
-                    except Exception as zai_err:
-                        logger.warning(f"تعذر تهيئة مفتاح Z.AI رقم {idx}: {zai_err}")
-        
+        if OpenAI and self.api_key:
+            try:
+                c = OpenAI(api_key=self.api_key, base_url=self.zai_base_url)
+                self.zai_clients.append(c)
+                logger.info(f"تم تفعيل محرك Z.AI (GLM) بنجاح.")
+            except Exception as zai_err:
+                logger.warning(f"تعذر تهيئة محرك Z.AI: {zai_err}")
+
         self.zai_client = self.zai_clients[0] if self.zai_clients else None
-
-        # Google Gemini AI Integration
-        self.gemini_api_key = Config.GEMINI_API_KEY
-        self.gemini_base_url = Config.GEMINI_BASE_URL
-        self.gemini_model = Config.GEMINI_MODEL
-        self.gemini_client = None
-
-        if OpenAI and self.gemini_api_key:
-            try:
-                self.gemini_client = OpenAI(
-                    api_key=self.gemini_api_key,
-                    base_url=self.gemini_base_url
-                )
-                logger.info(f"تم تفعيل Google Gemini AI Provider بنجاح بالنموذج: {self.gemini_model}")
-            except Exception as gem_err:
-                logger.warning(f"تعذر تهيئة Google Gemini AI Provider: {gem_err}")
-
-        # ZenMux / OpenAI API Integration
-        self.zenmux_api_key = Config.ZENMUX_API_KEY
-        self.zenmux_base_url = Config.ZENMUX_BASE_URL
-        self.zenmux_model = Config.ZENMUX_MODEL
-        self.zenmux_client = None
-
-        if OpenAI and self.zenmux_api_key:
-            try:
-                self.zenmux_client = OpenAI(
-                    api_key=self.zenmux_api_key,
-                    base_url=self.zenmux_base_url
-                )
-                logger.info(f"تم تفعيل ZenMux AI Provider بنجاح بالنموذج: {self.zenmux_model}")
-            except Exception as zm_err:
-                logger.warning(f"تعذر تهيئة ZenMux AI Provider: {zm_err}")
-
-        # OpenRouter AI Integration
-        self.openrouter_api_key = Config.OPENROUTER_API_KEY
-        self.openrouter_base_url = Config.OPENROUTER_BASE_URL
-        self.openrouter_model = Config.OPENROUTER_MODEL
-        self.openrouter_client = None
-
-        if OpenAI and self.openrouter_api_key:
-            try:
-                self.openrouter_client = OpenAI(
-                    api_key=self.openrouter_api_key,
-                    base_url=self.openrouter_base_url
-                )
-                logger.info(f"تم تفعيل OpenRouter AI Provider بنجاح بالنموذج: {self.openrouter_model}")
-            except Exception as or_err:
-                logger.warning(f"تعذر تهيئة OpenRouter AI Provider: {or_err}")
 
         # Thread pool for asynchronous / parallel execution
         self._executor = ThreadPoolExecutor(max_workers=4)
@@ -182,10 +144,7 @@ class AIService:
         # Cache for editorial reference string
         self._cached_editorial_reference: Optional[str] = None
 
-        # ------------------------------------------------------
         # Load editorial examples
-        # ------------------------------------------------------
-
         self.editorial_examples = (
             self.load_editorial_examples()
         )
@@ -195,80 +154,69 @@ class AIService:
     # ==========================================================
 
     def get_provider_for_model(self, model_name: str) -> str:
-        """Determines whether to route to Z.AI, Gemini, OpenRouter, ZenMux, or Groq based on model name."""
-        if not model_name:
-            return "zai" if self.zai_client else "groq"
-        model_str = str(model_name).lower()
-        if "glm" in model_str or "z.ai" in model_str or "zhipu" in model_str:
-            if self.zai_client:
-                return "zai"
-        if ":free" in model_str or "meta-llama/" in model_str or "google/" in model_str or "openrouter" in model_str:
-            if self.openrouter_client:
-                return "openrouter"
-        if "gemini" in model_str:
-            if self.gemini_client:
-                return "gemini"
-        if "deepseek/" in model_str or "openai/gpt-4" in model_str:
-            if self.zenmux_client:
-                return "zenmux"
-        return "groq"
+        """Always routes to Z.AI (GLM) as the sole LLM provider."""
+        return "zai"
 
     def _create_chat_completion(
         self,
         messages: List[Dict[str, str]],
         model_candidates: List[Tuple[str, str]],
         temperature: float = 0.2,
-        max_tokens: int = 3500
-    ) -> Tuple[Any, str, str]:
+        max_tokens: int = 3500,
+        validate_json: bool = True,
+        override_client: Any = None
+    ) -> Tuple[Any, str, str, Dict[str, Any]]:
         """
-        Executes a chat completion request with intelligent multi-provider, multi-model fallback,
-        smart rate limit handling (sleep or instant model switch), and JSON validation error recovery.
+        Executes a chat completion request with intelligent model fallback
+        and inline JSON validation error recovery on the user's dedicated Z.AI key.
         """
         last_exception = None
 
-        for provider, target_model in model_candidates:
-            if provider == "zai":
-                clients_for_provider = [c for c in self.zai_clients if c]
-            elif provider == "gemini":
-                clients_for_provider = [c for c in [self.gemini_client] if c]
-            elif provider == "openrouter":
-                clients_for_provider = [c for c in [self.openrouter_client] if c]
-            elif provider == "zenmux":
-                clients_for_provider = [c for c in [self.zenmux_client] if c]
-            else:
-                clients_for_provider = [c for c in [self.client, self.groq_client_2] if c]
+        clients_to_use = [override_client] if override_client else self.zai_clients
+        if not clients_to_use:
+            raise ValueError("لا يوجد أي مفتاح Z.AI (GLM) مفعّل أو صالح. يرجى إدخال مفتاح API الخاص بك في الإعدادات.")
 
-            if not clients_for_provider:
-                continue
-
-            use_response_format = (provider in ["groq", "gemini", "zai"])
-            attempts = [True, False] if use_response_format else [False]
-
-            for client_to_use in clients_for_provider:
-                client_success = False
-                for json_attempt in attempts:
+        for _, target_model in model_candidates:
+            for client_to_use in clients_to_use:
+                for json_attempt in [True, False]:
                     try:
-                        actual_tokens = 6000 if provider in ["gemini", "zai", "openrouter"] else (4000 if provider == "groq" else max_tokens)
+                        actual_tokens = 8192
                         logger.info(
-                            f"إرسال طلب توليد ({provider}) باستخدام النموذج: {target_model} (التوكينات: {actual_tokens})..."
+                            f"إرسال طلب توليد (Z.AI) باستخدام النموذج: {target_model} (التوكينات: {actual_tokens})..."
                         )
 
                         req_kwargs = {
                             "messages": messages,
                             "model": target_model,
                             "temperature": temperature,
-                            "max_tokens": actual_tokens
+                            "max_tokens": actual_tokens,
+                            "extra_body": {"thinking": {"type": "disabled"}}
                         }
 
                         if json_attempt:
                             req_kwargs["response_format"] = {"type": "json_object"}
 
-                        response = client_to_use.chat.completions.create(**req_kwargs)
+                        try:
+                            response = client_to_use.chat.completions.create(**req_kwargs)
+                        except Exception as api_err:
+                            if "extra_body" in req_kwargs and ("thinking" in str(api_err).lower() or "extra_body" in str(api_err).lower()):
+                                req_kwargs.pop("extra_body", None)
+                                response = client_to_use.chat.completions.create(**req_kwargs)
+                            else:
+                                raise api_err
 
                         msg_content = ""
                         if response and hasattr(response, "choices") and response.choices:
                             m = response.choices[0].message
-                            msg_content = (getattr(m, "content", "") or getattr(m, "reasoning_content", "") or "").strip()
+                            c_text = (getattr(m, "content", "") or "").strip()
+                            r_text = (getattr(m, "reasoning_content", "") or "").strip()
+
+                            if c_text and "{" in c_text:
+                                msg_content = c_text
+                            elif r_text and "{" in r_text:
+                                msg_content = r_text
+                            else:
+                                msg_content = c_text or r_text
 
                         if not msg_content and json_attempt:
                             logger.warning(f"النموذج {target_model} أعاد استجابة فارغة مع response_format. إعادة المحاولة بدون response_format...")
@@ -280,7 +228,22 @@ class AIService:
                                 f"Completion={response.usage.completion_tokens}, Total={response.usage.total_tokens}"
                             )
 
-                        return response, provider, target_model
+                        if validate_json:
+                            try:
+                                parsed_data = self.parse_json_response(msg_content)
+                                if isinstance(parsed_data, dict):
+                                    return response, "zai", target_model, parsed_data
+                                else:
+                                    logger.warning(f"النموذج {target_model} أعاد استجابة JSON ولكنها ليست Object. التجربة التالية...")
+                            except Exception as json_err:
+                                logger.warning(
+                                    f"النموذج {target_model} أعاد استجابة لا تمثل JSON صالحاً ({json_err}). "
+                                    f"بداية المحتوى: {msg_content[:120]}... الانتقال للنموذج/المفتاح التالي..."
+                                )
+                                last_exception = json_err
+                                continue
+                        else:
+                            return response, "zai", target_model, {}
 
                     except Exception as exc:
                         last_exception = exc
@@ -291,21 +254,30 @@ class AIService:
                             wait_match = re.search(r"try again in ([\d\.]+)s", exc_str)
                             wait_time = float(wait_match.group(1)) if wait_match else 2.0
 
-                            if 0 < wait_time <= 6.0 and len(clients_for_provider) == 1:
+                            if 0 < wait_time <= 6.0 and len(self.zai_clients) == 1:
                                 logger.warning(
                                     f"تجاوز حد التوكينات المؤقت للنموذج {target_model}. انتظار {wait_time:.1f} ثانية وإعادة المحاولة..."
                                 )
                                 time.sleep(wait_time + 0.5)
                                 try:
                                     response = client_to_use.chat.completions.create(**req_kwargs)
-                                    return response, provider, target_model
+                                    msg_content = ""
+                                    if response and hasattr(response, "choices") and response.choices:
+                                        m = response.choices[0].message
+                                        c_text = (getattr(m, "content", "") or "").strip()
+                                        r_text = (getattr(m, "reasoning_content", "") or "").strip()
+                                        msg_content = c_text if "{" in c_text else (r_text if "{" in r_text else (c_text or r_text))
+                                    if validate_json:
+                                        parsed_data = self.parse_json_response(msg_content)
+                                        return response, "zai", target_model, parsed_data
+                                    return response, "zai", target_model, {}
                                 except Exception as retry_exc:
                                     last_exception = retry_exc
                                     logger.warning(f"محاولة الإعادة للنموذج {target_model} تعذرت. جاري الانتقال لمفتاح/نموذج آخر...")
                                     break
                             else:
                                 logger.warning(
-                                    f"تجاوز حد التوكينات (TPM Rate Limit) للنموذج {target_model}. التبديل الفوري للمفتاح/النموذج التالي لتجنب التوقف..."
+                                    f"تجاوز حد التوكينات (TPM Rate Limit) للنموذج {target_model}. التبديل الفوري للمفتاح التالي لتجنب التوقف..."
                                 )
                                 break
 
@@ -314,26 +286,21 @@ class AIService:
                             logger.warning(f"النموذج {target_model} ملغى أو غير مفعل على حساب Z.AI/BigModel. جاري التجاوز للنموذج التالي...")
                             break
 
-                        # Case 3: Credit / Account Balance (ZenMux 402 / reject_no_credit)
-                        elif "reject_no_credit" in exc_str or "402" in exc_str or "credit" in exc_str:
-                            logger.warning(f"المزود {provider} يتطلب رصيداً أكبر من $0. جاري الانتقال لمزود آخر...")
-                            break
-
-                        # Case 4: Specific JSON Validation Failed
+                        # Case 3: Specific JSON Validation Failed
                         elif ("json_validate_failed" in exc_str or "failed to validate json" in exc_str or "schema" in exc_str) and json_attempt:
                             logger.warning(
                                 f"تعذر الالتزام بـ JSON Schema للنموذج {target_model}. إعادة المحاولة بدون response_format..."
                             )
                             continue
 
-                        # Case 5: Other Errors
+                        # Case 4: Other Errors
                         else:
                             logger.warning(
-                                f"تعذر استخدام النموذج {target_model} عبر {provider} (السبب: {exc}). جاري التبديل لنموذج آخر..."
+                                f"تعذر استخدام النموذج {target_model} عبر Z.AI (السبب: {exc}). جاري التبديل للمفتاح/النموذج التالي..."
                             )
                             break
 
-        raise ValueError(f"فشلت جميع المحاولات والنماذج الاحتياطية. الخطأ الأخير: {last_exception}")
+        raise ValueError(f"فشلت جميع محاولات الصياغة عبر Z.AI (GLM). الخطأ الأخير: {last_exception}")
 
     # ==========================================================
     # LOAD EDITORIAL JSON
@@ -406,8 +373,8 @@ class AIService:
 
     def build_editorial_reference(self) -> str:
         """
-        Convert article_examples.json into a compact textual
-        reference for the model. Caches the result in memory for speed.
+        Convert article_examples.json into a compact, highly diverse textual
+        editorial reference for the model. Caches the result in memory for speed.
         """
 
         if self._cached_editorial_reference is not None:
@@ -422,16 +389,18 @@ class AIService:
             self._cached_editorial_reference = "No editorial examples available."
             return self._cached_editorial_reference
 
+        # Select 3 diverse representative models across platforms, experts, and educators
+        preferred_ids = ["almo3jiz", "abdulrahman_hamid", "mahmoud_elghzawy"]
+        selected_articles = [a for a in articles if isinstance(a, dict) and a.get("id") in preferred_ids]
+        if not selected_articles:
+            selected_articles = [a for a in articles if isinstance(a, dict)][:3]
+
         reference_blocks = []
 
         for index, article in enumerate(
-            articles,
+            selected_articles,
             start=1
         ):
-
-            if not isinstance(article, dict):
-                continue
-
             title = str(article.get("title", "")).strip()
             lead = str(article.get("lead_paragraph", "")).strip()
             sections = article.get("sections", [])
@@ -443,9 +412,8 @@ class AIService:
             ]
 
             if isinstance(sections, list):
-
-                for section in sections:
-
+                # Pick up to 4 key sections to maintain prompt conciseness
+                for section in sections[:4]:
                     if not isinstance(section, dict):
                         continue
 
@@ -575,59 +543,59 @@ class AIService:
 
     def generate_article(
         self,
-        raw_notes_or_name: str,
+        raw_notes_or_name: str = "",
         phone_or_raw: str = "",
-        raw_notes: str = ""
+        raw_notes: str = "",
+        raw_source: str = "",
+        client_name: str = "",
+        client_phone: str = "",
+        api_key: Optional[str] = None
     ) -> dict:
 
         # ------------------------------------------------------
-        # API KEY
+        # API KEY RESOLUTION & ISOLATION
         # ------------------------------------------------------
-
-        if not self.api_key:
-
+        active_client = None
+        clean_key = (api_key or "").strip()
+        if clean_key:
+            try:
+                active_client = OpenAI(api_key=clean_key, base_url=self.zai_base_url)
+            except Exception as ce:
+                raise ValueError(f"تعذر تهيئة مفتاح Z.AI الممرر: {ce}")
+        elif self.zai_clients:
+            active_client = self.zai_clients[0]
+        else:
             raise ValueError(
-                "مفتاح Groq API غير محدد. "
-                "يرجى ضبط GROQ_API_KEY في ملف .env "
-                "أو في إعدادات التطبيق."
-            )
-
-        if not self.client:
-
-            self.client = Groq(
-                api_key=self.api_key
+                "⚠️ مفتاح Z.AI API الخاص بك غير محدد! "
+                "يرجى إدخال وتفعيل مفتاحك الشخصي في الإعدادات قبل البدء في الصياغة والنشر."
             )
 
         # ======================================================
-        # BACKWARD COMPATIBILITY
+        # ARGUMENT RESOLUTION & BACKWARD COMPATIBILITY
         # ======================================================
 
-        if raw_notes:
-
+        if raw_source:
+            actual_raw_notes = raw_source
+            actual_name = client_name or raw_notes_or_name
+            actual_phone = client_phone or phone_or_raw
+        elif raw_notes:
             actual_raw_notes = raw_notes
-            actual_name = raw_notes_or_name
-            actual_phone = phone_or_raw
-
+            actual_name = client_name or raw_notes_or_name
+            actual_phone = client_phone or phone_or_raw
         elif (
             phone_or_raw
             and len(phone_or_raw) > 30
         ):
-
             actual_raw_notes = phone_or_raw
-            actual_name = raw_notes_or_name
-            actual_phone = ""
-
+            actual_name = client_name or raw_notes_or_name
+            actual_phone = client_phone or ""
         else:
-
             actual_raw_notes = raw_notes_or_name
-
             actual_name = (
-                phone_or_raw
-                if len(phone_or_raw) < 30
-                else ""
+                client_name
+                or (phone_or_raw if len(phone_or_raw) < 30 else "")
             )
-
-            actual_phone = ""
+            actual_phone = client_phone or ""
 
         # ======================================================
         # EXTRACT & TRANSLITERATE NAME FROM FIRST LINES IF MISSING
@@ -697,18 +665,10 @@ class AIService:
         # EXTRACT PHONE
         # ======================================================
 
+        from services.whatsapp_service import extract_preferred_whatsapp_phone
+
         if not actual_phone:
-
-            phone_match = re.search(
-                r"(?:01[0125]\d{8}|\+?201[0125]\d{8})",
-                actual_raw_notes
-            )
-
-            if phone_match:
-
-                actual_phone = (
-                    phone_match.group(0)
-                )
+            actual_phone = extract_preferred_whatsapp_phone(actual_raw_notes)
 
         # ======================================================
         # NORMALIZE PHONE
@@ -732,9 +692,13 @@ class AIService:
         # SYSTEM PROMPT
         # ======================================================
 
-        system_prompt = f"""You must output a valid JSON object.
-You are the Senior Editor and Lead Journalist of
-"{self.NEWSPAPER_NAME}".
+        system_prompt = f"""CRITICAL FORMATTING REQUIREMENT:
+Your response MUST BE A SINGLE VALID RAW JSON OBJECT ONLY.
+DO NOT output any reasoning, thinking, step-by-step analysis, introductory text, preamble, or code fences.
+DO NOT write "Analyze the Request", "Role", "Task", or any English text before or after the JSON.
+Your output MUST start immediately with the character '{{' and end with '}}'.
+
+You are the Senior Editor and Lead Journalist of "{self.NEWSPAPER_NAME}".
 
 Your job is to transform raw client information into a
 professionally written Arabic journalistic feature article
@@ -891,6 +855,17 @@ Identify the subject's gender and entity type accurately:
 CRITICAL: Maintain absolute pronoun consistency! Never mix male and female pronouns for the same person.
 
 ============================================================
+AUTOMATIC ENTITY TYPE & GENDER DETECTION (استنتاج صفة المخاطبة تلقائياً)
+============================================================
+
+The AI must accurately determine the "entity_type" of the subject from the source notes:
+- "female": If the subject is a female individual (دكتورة، أستاذة، مهندسة، صيدلانية، معالجة، مدربة، سيدة، أو اسم أنثى).
+- "plural": If the subject is a company, clinic, academy, medical center, hospital, brand, lab, team, or institution (عيادة، عيادات، مركز، مستشفى، أكاديمية، شركة، مؤسسة، منصة، فريق...).
+- "male": If the subject is a male individual (دكتور، أستاذ، مهندس، صيدلي، رجل، أو اسم مذكر) or general male default.
+
+Set "entity_type" in the JSON output strictly to one of: "male", "female", or "plural".
+
+============================================================
 HONORIFIC TITLES PRESERVATION RULE (VERY IMPORTANT)
 ============================================================
 
@@ -1024,166 +999,100 @@ Do NOT use the same exact sentence mechanically every time.
 The introduction should feel customized to the subject.
 
 ============================================================
-ARTICLE STRUCTURE
+NON-REPETITION MANDATE (مبدأ عدم التكرار الصارم — منع الحشو والدوران اللفظي)
+============================================================
+
+CRITICAL EDITORIAL DIRECTIVE:
+You are strictly forbidden from producing repetitive or redundant text. Every paragraph, subheading, and sentence MUST add unique informational and journalistic value.
+
+Apply these non-repetition rules strictly:
+
+1. ZERO IDEA REDUNDANCY (منع تكرار الأفكار والمعلومات):
+   - Never restate facts or concepts that were already stated in the lead paragraph or in previous sections.
+   - Once a fact (e.g. professional degree, specialization, year, program name, or feature) is introduced, do NOT explain it again in subsequent sections under a different title.
+   - Prohibit circular paraphrasing (إعادة تدوير نفس الكلام بصياغات مختلفة): each section must progress forward with brand new information and distinct angles.
+
+2. ZERO PRAISE CLICHÉ REPETITION (منع تكرار عبارات المدح والإنشاء المبتذل):
+   - Editorial recognition must be dignified, journalistic, and grounded in real facts and achievements provided in the source.
+   - NEVER repeat praise clichés (such as "من القامات البارزة", "بصمة استثنائية", "رؤية ثاقبة", "علامة مضيئة", "نموذج يُحتذى به") more than ONCE in the entire article.
+   - Express excellence through concrete details, documented services, and real-world impact rather than empty superlatives.
+
+3. DYNAMIC SECTION STRUCTURE (مرونة عدد الأقسام حسب عمق المعطيات المتاحة):
+   - The article should contain 4 to 6 focused, information-dense sections (or 3 to 4 sections if the input notes are very concise).
+   - NEVER force 7 or 8 artificial sections when data is sparse, as this forces severe repetition and filler.
+   - Each section must tackle ONE distinct, meaningful angle:
+     * Angle A: News context & core offering (ما يقدمه الكيان أو الشخصية وأهميته الراهنة).
+     * Angle B: Professional methodology & operational depth (الأسلوب المتبع، المحاور، آليات التنفيذ).
+     * Angle C: Target audience & practical market impact (الفئات المستفيدة، القيمة التطبيقية، وسوق العمل).
+     * Angle D: Current activities, upcoming programs, or distinctive features (المزايا النوعية، البرامج الحالية).
+     * Angle E: Distinct journalistic synthesis / future outlook (الرؤية المستقبلية أو القيمة المستدامة).
+
+4. VARIED JOURNALISTIC TRANSITIONS (تنوع أدوات الربط والافتتاحيات):
+   - Do NOT start multiple paragraphs with the same phrasing (e.g., repeating "وتأتي هذه...", "وتسعى...", "ويؤكد...").
+   - Employ varied, natural journalistic transitions:
+     "وفي سياق متصل...", "وعلى صعيد البرامج والمبادرات...", "وحول آليات العمل والمنهجية...", "وبالانتقال إلى الجانب التطبيقي...", "ويرتكز هذا التوجه على...", "وفيما يتعلق بمتطلبات الفئة المستهدفة...", "ومع تزايد الحاجة إلى...".
+
+5. SMART SUBJECT REFERENCING (ذكاء الإشارة إلى الشخصية أو الكيان):
+   - Do NOT repeat the full name of the subject at the beginning of every single sentence or paragraph.
+   - Use varied natural Arabic references: professional title (الخبير / المدرب / المتخصص / المحاضر / الأستاذ), natural pronouns (موضحاً / مؤكداً / مشيراً إلى أن), and contextual references.
+
+6. JOURNALISTIC CONCLUSION (خاتمة تحليلية رصينة وليست تكراراً لما سبق):
+   - The closing section is a synthesis of value and forward-looking relevance, NOT a redundant recap of earlier paragraphs.
+   - Keep it concise, focused, and impactful (1 to 2 dense paragraphs).
+
+============================================================
+ARTICLE STRUCTURE & HEADINGS
 ============================================================
 
 The article MUST contain:
-
-1. A strong journalistic title.
-2. One lead paragraph.
-3. 5 to 8 meaningful editorial sections.
-4. A final summary/conclusion section.
-5. A communication section when contact information exists.
-
-Recommended flow:
-
-TITLE
-
-LEAD
-
-SECTION 1:
-Who is the subject and what does it offer?
-
-SECTION 2:
-Expertise / specialization / background.
-
-SECTION 3:
-Services / programs / products / methodology.
-
-SECTION 4:
-Practical value / audience / use cases.
-
-SECTION 5:
-Distinctive aspects supported by the source.
-
-SECTION 6:
-Current activities / developments / opportunities,
-if supported.
-
-SECTION 7:
-Overall value and future relevance,
-if supported.
-
-CONCLUSION
-
-CONTACT
-
-Do not create empty or generic sections.
-
-============================================================
-HEADINGS
-============================================================
-
-Use 5 to 8 subheadings.
+1. A strong journalistic title (Google SERP optimized: "[Subject Name]..[News Hook with Keyword]").
+2. One compelling lead paragraph (answers core Ws, introduces **جريدة تحت الضوء الإخبارية**).
+3. 4 to 6 rich, information-dense editorial sections (adapted dynamically to source depth).
+4. A distinct, non-repetitive closing section.
+5. A contact section only if phone/contact data exists.
 
 Subheadings must be:
-
-- journalistic
-- descriptive
-- specific
-- naturally connected to the content
-
-Avoid generic headings such as:
-
-"نبذة عن الشركة"
-
-"الخدمات"
-
-"الخاتمة"
-
-"معلومات مهمة"
-
-Prefer headings that communicate actual content.
-
-Examples:
-
-"خبرة تجمع بين المعرفة والتطبيق"
-
-"حلول رقمية تسهّل الوصول إلى المعرفة"
-
-"تدريب عملي يركز على التطبيق"
-
-"من الفكرة إلى التنفيذ"
+- Descriptive, journalistic, and informative (e.g. "تدريب عملي يركز على التطبيق المباشر", "رؤية تجمع بين التخصص وسوق العمل").
+- Specific to the section's unique content.
+- Completely free of trailing punctuation (no periods, colons, or dashes at the end).
+- Never generic like "نبذة عن الشخص" or "الخدمات" or "الخاتمة".
 
 ============================================================
-ARTICLE LENGTH — HARD REQUIREMENT
+ARTICLE LENGTH & INFORMATION DENSITY
 ============================================================
 
 The final article body MUST contain between:
-
-{self.MIN_ARTICLE_CHARS} and {self.MAX_ARTICLE_CHARS} CHARACTERS.
-
-To hit this required target in your VERY FIRST output, write at least 6 comprehensive sections, with each section containing 2 to 3 rich, multi-sentence journalistic paragraphs.
-
-Target approximately:
-
-1500-5000 characters.
-
-DO NOT produce a short article. Avoid single-line sections.
-
-Reach the required length through:
-
-- useful explanations
-- contextual information
-- detailed service descriptions
-- practical relevance
-- smooth transitions
-- audience-focused explanations
-- supported details
+{self.MIN_ARTICLE_CHARS} and {self.MAX_ARTICLE_CHARS} CHARACTERS (typically 1500-2800 characters).
+Every single paragraph must be rich with concrete information, clear explanations, and journalistic context.
+DO NOT pad or stretch the text with repetitive sentences. Depth comes from thorough explanation of the facts provided.
 
 ============================================================
-PARAGRAPH STYLE
+PARAGRAPH STYLE & JOURNALISTIC FLOW
 ============================================================
 
-Write medium-length journalistic paragraphs.
+Write medium-length journalistic paragraphs (2-4 sentences each).
 
 Avoid:
-
 - one-line paragraphs
-- huge blocks
-- repetitive wording
-- excessive marketing language
-- social-media style
-- emoji-heavy writing
+- huge unbroken walls of text
+- repetitive wording or circular explanations
+- excessive promotional or sales language
+- social-media slang or casual phrasing
+- emojis
 
-Use clear transitions such as:
-
-"وتأتي هذه الخطوة..."
-"ومن أبرز ما يميز..."
-"ولا يقتصر..."
-"كما..."
-"وفي هذا السياق..."
-"ويعكس ذلك..."
-"ومن هنا..."
-"ومع..."
-"وتستهدف..."
-
-Use them naturally, not mechanically.
+Maintain an objective, authoritative Egyptian journalistic voice: informative, engaging, and credible.
 
 ============================================================
-PROMOTIONAL BALANCE
+DIGNIFIED JOURNALISTIC RECOGNITION (الثناء والتقدير المهني الرصين)
 ============================================================
 
-The article can highlight the strengths of the subject.
-
-However:
-
-DO NOT sound like a paid advertisement.
-
-Avoid exaggerated phrases such as:
-
-"الأفضل على الإطلاق"
-"رقم واحد"
-"لا مثيل له"
-"يضمن النجاح"
-"يحقق نتائج مضمونة"
-
-unless such claims are explicitly present in the source and
-clearly attributed to the client.
-
-The preferred tone is:
-
-professional + informative + positive + credible.
+احرص على إبراز صاحب الخبر أو الكيان بأعلى درجات التقدير الصحفي الرصين والمستحق، مع الالتزام التام بالقواعد التالية:
+1. الثناء القائم على الوقائع:
+   - أبرز كفاءة الشخصية وتفوقها من خلال شرح إنجازاتها، تخصصها، وخبراتها العملية الواردة في المصدر.
+2. عدم تكرار كليشيهات المدح:
+   - ممنوع منعاً باتاً تكرار عبارات الثناء الفضفاضة في كل فقرة. ضع التقدير في موضعه الطبيعي بأسلوب وقور ومقنع.
+3. التوازن بين النبرة الاحتفائية والمصداقية الصحفية:
+   - اجعل المقال يمنح الشخصية حضوراً مميزاً ومهيباً يُشعر القارئ بقيمتها المهنية الحقيقية دون مبالغة فجة.
 
 ============================================================
 BOLD MARKERS
@@ -1257,27 +1166,58 @@ Do not invent social links.
 Only use available information.
 
 ============================================================
-TITLE RULES — MANDATORY SUBJECT NAME INCLUSION (STRICT REQUIREMENT)
+CLIENT PHONE SELECTION RULES (STRICT)
 ============================================================
 
-1. MANDATORY NAME INCLUSION (إجبارية ذكر اسم الشخص أو الكيان في العنوان الرئيسي):
-   - The headline (`title`) MUST MANDATORILY start with or prominently contain the name of the person or entity (e.g., `client_name`) extracted from raw data.
-   - Preserve the exact language of the name (Arabic or English) as given in raw data.
-   - OBLIGATORY TITLE STRUCTURE:
-     `"اسم الشخص أو الكيان.. [وصف صحفي مباشر وجذاب ومحدد]"`
-   - Examples of Mandatory Headlines:
-     - `أ/ شريف الحصافي.. منهجية متخصصة لتعليم الفلسفة والمنطق والتاريخ الوطني`
-     - `د. أحمد طلبة.. رؤية جديدة لتطوير الرعاية الصحية في مصر`
-     - `أكاديمية الفكر الرقمي.. حلول تدريبية متقدمة لتأهيل الكوادر الإعلامية`
-     - `Dr. Mark Johnson.. Launching Advanced AI Coding Programs`
+When extracting the "client_phone":
+- If the source notes contain multiple phone numbers:
+  1. Priority 1: Select the phone number that has "واتساب" or "واتس" or "WhatsApp" or any indication stating it is WhatsApp.
+  2. Priority 2: If multiple numbers exist but NONE has a WhatsApp indicator, select the FIRST phone number appearing in the message.
+- Normalize to valid Egyptian phone format (e.g. 01xxxxxxxxx or 201xxxxxxxxx).
 
-2. FALLBACK ONLY IF NO NAME EXISTS:
-   - IF and ONLY IF there is absolutely NO person name, brand, or entity name anywhere in the raw data, you may construct a descriptive topic headline (e.g. `منهجية حديثة لتعليم الفلسفة والمنطق في الثانوية العامة`).
-   - Otherwise, including the subject's name in the title is 100% COMPULSORY (إجباري).
+============================================================
+GOOGLE SEO 2026 STANDARDS & SEARCH ARCHITECTURE (STRICT)
+============================================================
 
-3. FORMATTING:
-   - The title MUST NOT contain **bold markers**.
-   - Avoid clickbait or exaggerated punctuation.
+1. SEARCH INTENT & KEYWORD STRATEGY:
+   - Identify the user's explicit search intent (Navigational / Informational / Commercial).
+   - "focus_keyword": Extract/formulate exactly 1 primary search keyword (2-4 words) that users search on Google (e.g., "أفضل مدرس فلسفة بالمنصورة", "عيادة جراحة العظام بالتجمع").
+   - "lsi_keywords": Generate 3 to 5 semantically related keywords (LSI) that support the primary keyword and will be naturally woven into subheadings and paragraphs.
+
+2. TITLE RULES — GOOGLE SERP OPTIMIZATION (STRICT REQUIREMENT):
+   - MANDATORY NAME & KEYWORD INCLUSION (إجبارية ذكر اسم الشخص أو الكيان في بداية العنوان):
+     The headline (`title`) MUST start with or prominently contain the name of the person or entity (e.g., `client_name`) extracted from raw data, followed by a journalistic hook with the focus keyword.
+   - SEPARATOR RULE (قاعدة الفاصل الصحفي المعتمد):
+     استخدم دائماً نقطتين متتاليتين ".." كفاصل مباشر بين اسم الشخص/الكيان والعنوان الصحفي الجاذب دون مسافات تفصل النقطتين (أو كما في المثال: اسم الشخص..فكرة الخبر).
+     ممنوع استخدام النقطتين الرأسيتين ":" بعد اسم الشخص أو في العنوان إطلاقاً.
+   - EXACT STRUCTURE:
+     `"[اسم الشخص أو الكيان]..[فكرة صحفية جاذبة تتضمن الكلمة المفتاحية والقيمة المضافة]"`
+   - LENGTH:
+     Strictly between 45 and 60 characters for complete SERP display without truncation on mobile and desktop Google Search.
+   - EXAMPLES:
+     - `أحمد حجاج..قانون الإجراءات الجنائية الجديد يغير موازين العدالة`
+     - `أ/ شريف الحصافي..منهجية مبتكرة لتعليم الفلسفة للثانوية العامة`
+     - `د. أحمد طلبة..استراتيجيات حديثة لتطوير الرعاية الصحية في مصر`
+     - `أكاديمية الفكر الرقمي..حلول تدريبية لتأهيل الكوادر الإعلامية`
+     - `Dr. Mark Johnson..Launching Advanced AI Coding Programs in Cairo`
+   - FALLBACK ONLY IF NO NAME EXISTS:
+     If and only if there is absolutely no person name or brand in the raw data, construct an intent-driven topic headline.
+
+3. META DESCRIPTION (CTR OPTIMIZATION):
+   - "meta_description": Strictly 135 to 155 characters.
+   - Must contain the "focus_keyword" in the first 70 characters.
+   - Must summarize the core news value concisely and end with a clear action/hook (e.g., "اقرأ التفاصيل الكاملة عبر جريدة تحت الضوء.").
+   - Do NOT use quotes or bold markers inside meta_description.
+
+4. CONTENT STRUCTURE (INVERTED PYRAMID & SEMANTIC HIERARCHY):
+   - Lead Paragraph: Direct answers to the 5 Ws and 1 H (من، ماذا، متى، أين، لماذا، كيف).
+     The "focus_keyword" must appear naturally in the first 80 words.
+     Must introduce **جريدة تحت الضوء الإخبارية** as the reporting authority.
+   - Subheadings ("subheading"): 3 to 5 clear, descriptive subheadings. Each subheading MUST answer a specific user query and contain secondary/LSI keywords.
+
+5. ARTICLE LENGTH & EDITORIAL DEPTH:
+   - Total article length must be strictly between {self.MIN_ARTICLE_CHARS} and {self.MAX_ARTICLE_CHARS} characters (sweet spot: ~1800-2600 characters).
+   - High information density, zero filler words, professional Arabic journalistic tone.
 
 ============================================================
 SLUG
@@ -1286,7 +1226,6 @@ SLUG
 Generate a lowercase English slug.
 
 Rules:
-
 - English letters only
 - numbers allowed
 - hyphens allowed
@@ -1295,7 +1234,6 @@ Rules:
 - must end with .html
 
 Example:
-
 dr-mohamed-samy-accounting-academy.html
 
 ============================================================
@@ -1321,15 +1259,10 @@ OUTPUT FORMAT — ABSOLUTE
 Return ONLY valid JSON.
 
 No markdown.
-
 No explanation.
-
 No introductory text.
-
 No code fences.
-
 No text before JSON.
-
 No text after JSON.
 
 Use exactly this structure:
@@ -1340,6 +1273,9 @@ Use exactly this structure:
   "entity_type": "male | female | plural",
   "title": "",
   "slug": "",
+  "focus_keyword": "",
+  "lsi_keywords": [""],
+  "meta_description": "",
   "labels": [""],
   "lead_paragraph": "",
   "sections": [
@@ -1359,48 +1295,37 @@ JSON SAFETY
 ============================================================
 
 The response MUST be valid JSON.
-
 Escape quotation marks correctly.
-
 Do not put raw line breaks inside JSON strings.
-
 Do not add trailing commas.
-
 Do not return Python dictionaries.
-
 Do not return comments.
 
 ============================================================
-FINAL QUALITY CHECK BEFORE OUTPUT
+FINAL QUALITY CHECK (INTERNAL MEMORY ONLY - DO NOT OUTPUT TEXT)
 ============================================================
 
-Before returning the JSON, silently verify:
+Silently verify the following points in your memory before outputting the raw JSON:
 
-[ ] Article is Arabic.
-[ ] Article is between {self.MIN_ARTICLE_CHARS} and {self.MAX_ARTICLE_CHARS} characters.
-[ ] Target is approximately 3500-5000 characters.
-[ ] 5-8 meaningful sections exist.
-[ ] Introduction begins with the required newspaper identity.
-[ ] **جريدة تحت الضوء الإخبارية** is correctly bolded in body text.
-[ ] No HTML exists.
-[ ] No bold exists in title.
-[ ] No bold exists in subheadings.
-[ ] Facts are preserved.
-[ ] No unsupported major facts were invented.
-[ ] Exactly one Arabic label exists.
-[ ] Slug is lowercase English and ends with .html.
-[ ] Contact details are included only when available.
-[ ] JSON is valid.
-[ ] The article does not copy reference examples.
-[ ] The article reads like a professional newspaper feature.
+- Article is in Arabic.
+- Article is between {self.MIN_ARTICLE_CHARS} and {self.MAX_ARTICLE_CHARS} characters (target ~1800-2600 chars).
+- 4-6 meaningful, non-repetitive sections exist with informative subheadings (free of trailing punctuation).
+- ZERO repetition: Absolutely no repeated facts, sentences, praise clichés, or circular paraphrasing across sections or between lead and body.
+- focus_keyword, lsi_keywords, and meta_description (135-155 chars) are provided.
+- Title starts with subject name, uses '..' as separator without colon ':', and is 45-60 characters.
+- Introduction begins with the required newspaper identity.
+- **جريدة تحت الضوء الإخبارية** is correctly bolded in body text.
+- No HTML exists.
+- No bold exists in title or subheadings.
+- Facts are preserved. No unsupported major facts were invented.
+- Exactly one Arabic label exists from the allowed list.
+- Slug is lowercase English and ends with .html.
+- Contact details are included only when available.
+- JSON is valid.
 
-If the draft is below {self.MIN_ARTICLE_CHARS} characters, expand useful
-supported details before returning.
-
-If the draft exceeds {self.MAX_ARTICLE_CHARS} characters, compress repetitive
-sentences before returning.
-
-Raw source information follows in the USER message.
+CRITICAL FINAL REMINDER:
+DO NOT PRINT OR WRITE DOWN ANY VERIFICATION STEPS OR TEXT.
+OUTPUT RAW VALID JSON ONLY, STARTING IMMEDIATELY WITH '{{' AND ENDING WITH '}}'.
 """
 
         # ======================================================
@@ -1443,29 +1368,10 @@ Return JSON only.
         # SEND REQUEST WITH AUTOMATED MODEL FALLBACK & TOKEN PROTECTION
         # ======================================================
 
-        # Build prioritized list of (provider, model) candidates
-        model_candidates = []
-        primary_prov = self.get_provider_for_model(self.model)
-        model_candidates.append((primary_prov, self.model))
-
-        if self.gemini_client and self.gemini_model:
-            cand = ("gemini", self.gemini_model)
-            if cand not in model_candidates:
-                model_candidates.append(cand)
-
-        if self.openrouter_client and self.openrouter_model:
-            cand = ("openrouter", self.openrouter_model)
-            if cand not in model_candidates:
-                model_candidates.append(cand)
-
-        if self.zenmux_client and self.zenmux_model:
-            cand = ("zenmux", self.zenmux_model)
-            if cand not in model_candidates:
-                model_candidates.append(cand)
-
+        # Build prioritized list of Z.AI GLM model candidates
+        model_candidates = [("zai", self.model)]
         for m in self.FALLBACK_MODELS:
-            prov = self.get_provider_for_model(m)
-            cand = (prov, m)
+            cand = ("zai", m)
             if cand not in model_candidates:
                 model_candidates.append(cand)
 
@@ -1474,26 +1380,13 @@ Return JSON only.
             {"role": "user", "content": user_prompt}
         ]
 
-        response, provider_used, model_used = self._create_chat_completion(
+        response, provider_used, model_used, parsed_data = self._create_chat_completion(
             messages=messages,
             model_candidates=model_candidates,
             temperature=0.2,
-            max_tokens=3500
-        )
-
-        msg_obj = response.choices[0].message if (response and hasattr(response, "choices") and response.choices) else None
-        content = (getattr(msg_obj, "content", "") or getattr(msg_obj, "reasoning_content", "") or "") if msg_obj else ""
-
-        logger.debug(
-            f"استجابة Groq الخام: {content}"
-        )
-
-        # ======================================================
-        # PARSE JSON
-        # ======================================================
-
-        parsed_data = self.parse_json_response(
-            content
+            max_tokens=3500,
+            validate_json=True,
+            override_client=active_client
         )
 
         # ======================================================
@@ -1549,25 +1442,41 @@ Return JSON only.
         ] = client_name
 
         # ======================================================
-        # MANDATORY TITLE SAFEGUARD (Ensure Subject Name in Title)
+        # MANDATORY TITLE SAFEGUARD (Subject Name & '..' Separator)
         # ======================================================
         title = str(parsed_data.get("title", "")).strip()
+        # Convert colon or dash separators after client name to '..'
+        title = re.sub(r"\s*:\s*", "..", title)
+        title = re.sub(r"\s*\.{2,}\s*", "..", title)
+        title = re.sub(r"\s+-\s+", "..", title)
+
         if client_name and client_name.strip() and client_name not in ["خبر صحفي", "عميل تليجرام", ""]:
             clean_name_word = re.sub(r"^(أ/|أ\.|د/|د\.|م/|م\.|ك/|ك\.|أستاذ/|دكتور/|مهندس/|كابتن/)\s*", "", client_name).strip()
             if clean_name_word and clean_name_word.lower() not in title.lower():
                 if ".." in title:
                     rest_title = title.split("..", 1)[1].strip()
-                    title = f"{client_name}.. {rest_title}"
+                    title = f"{client_name}..{rest_title}"
                 else:
-                    title = f"{client_name}.. {title}"
+                    title = f"{client_name}..{title}"
+            elif ".." in title:
+                parts = title.split("..", 1)
+                title = f"{parts[0].strip()}..{parts[1].strip()}"
+        elif ".." in title:
+            parts = title.split("..", 1)
+            title = f"{parts[0].strip()}..{parts[1].strip()}"
         parsed_data["title"] = title
 
         # ======================================================
         # CLIENT PHONE
         # ======================================================
 
+        from services.whatsapp_service import extract_preferred_whatsapp_phone
+
+        preferred_notes_phone = extract_preferred_whatsapp_phone(actual_raw_notes)
+
         client_phone = (
-            parsed_data.get(
+            preferred_notes_phone
+            or parsed_data.get(
                 "client_phone"
             )
             or actual_phone
@@ -1582,6 +1491,26 @@ Return JSON only.
         parsed_data[
             "client_phone"
         ] = client_phone
+
+        # ======================================================
+        # NORMALIZE ENTITY TYPE (LLM AUTO-DETECTION)
+        # ======================================================
+        raw_entity = str(parsed_data.get("entity_type", "")).strip().lower()
+        if raw_entity in ["female", "مؤنث", "أنثى"]:
+            final_entity = "female"
+        elif raw_entity in ["plural", "group", "جمع", "جهة", "مؤسسة", "شركة", "مركز", "عيادة", "كيان"]:
+            final_entity = "plural"
+        elif raw_entity in ["male", "مذكر", "رجل"]:
+            final_entity = "male"
+        else:
+            try:
+                from services.whatsapp_service import detect_entity_type
+                detected = detect_entity_type(actual_name or client_name or actual_raw_notes)
+                final_entity = "plural" if detected in ["group", "plural"] else detected
+            except Exception:
+                final_entity = "male"
+
+        parsed_data["entity_type"] = final_entity
 
         # ======================================================
         # NORMALIZE LABELS
@@ -1709,38 +1638,12 @@ Return JSON only.
         )
 
         # ======================================================
-        # SECOND PASS IF LENGTH IS INVALID
+        # ARTICLE LENGTH ACCEPTANCE (DIRECT PASS - AS-IS)
         # ======================================================
 
-        if (
-            article_length
-            < self.MIN_ARTICLE_CHARS
-            or article_length
-            > self.MAX_ARTICLE_CHARS
-        ):
-
-            logger.warning(
-                "طول الخبر خارج النطاق المطلوب. "
-                "سيتم تنفيذ محاولة ضبط تلقائية."
-            )
-
-            parsed_data = (
-                self.adjust_article_length(
-                    parsed_data,
-                    actual_raw_notes
-                )
-            )
-
-            final_length = len(
-                self.get_article_text(
-                    parsed_data
-                )
-            )
-
-            logger.info(
-                f"طول الخبر بعد الضبط: "
-                f"{final_length} حرف"
-            )
+        logger.info(
+            f"تم اعتماد المقال مباشرة بطول {article_length} حرف دون إعادة ضبط أو اقتطاع."
+        )
 
         # ======================================================
         # FINAL VALIDATION
@@ -1779,7 +1682,9 @@ Return JSON only.
 
         # Direct json parsing
         try:
-            return json.loads(cleaned_content, strict=False)
+            res = json.loads(cleaned_content, strict=False)
+            if isinstance(res, dict):
+                return res
         except json.JSONDecodeError:
             pass
 
@@ -1791,7 +1696,9 @@ Return JSON only.
 
             # Direct parse snippet
             try:
-                return json.loads(snippet, strict=False)
+                res = json.loads(snippet, strict=False)
+                if isinstance(res, dict):
+                    return res
             except json.JSONDecodeError:
                 pass
 
@@ -1991,20 +1898,8 @@ Return JSON only.
         parsed_data: dict,
         raw_source: str
     ) -> dict:
-
-        current_length = len(
-            self.get_article_text(
-                parsed_data
-            )
-        )
-
-        if (
-            self.MIN_ARTICLE_CHARS
-            <= current_length
-            <= self.MAX_ARTICLE_CHARS
-        ):
-
-            return parsed_data
+        """Bypassed: Articles are published directly as-is without length adjustment."""
+        return parsed_data
 
         current_json = json.dumps(
             parsed_data,
@@ -2098,28 +1993,10 @@ Do not return Markdown.
 Do not return explanations.
 """
 
-        model_candidates = []
-        primary_prov = self.get_provider_for_model(self.model)
-        model_candidates.append((primary_prov, self.model))
-
-        if self.gemini_client and self.gemini_model:
-            cand = ("gemini", self.gemini_model)
-            if cand not in model_candidates:
-                model_candidates.append(cand)
-
-        if self.openrouter_client and self.openrouter_model:
-            cand = ("openrouter", self.openrouter_model)
-            if cand not in model_candidates:
-                model_candidates.append(cand)
-
-        if self.zenmux_client and self.zenmux_model:
-            cand = ("zenmux", self.zenmux_model)
-            if cand not in model_candidates:
-                model_candidates.append(cand)
-
+        # Build prioritized list of Z.AI GLM model candidates
+        model_candidates = [("zai", self.model)]
         for m in self.FALLBACK_MODELS:
-            prov = self.get_provider_for_model(m)
-            cand = (prov, m)
+            cand = ("zai", m)
             if cand not in model_candidates:
                 model_candidates.append(cand)
 
@@ -2139,29 +2016,17 @@ Do not invent facts."""
         ]
 
         try:
-            response, provider_used, model_used = self._create_chat_completion(
+            response, provider_used, model_used, adjusted = self._create_chat_completion(
                 messages=messages,
                 model_candidates=model_candidates,
                 temperature=0.2,
-                max_tokens=3500
+                max_tokens=3500,
+                validate_json=True
             )
-        except Exception as exc:
-            logger.error(f"فشلت جميع محاولات محاذاة الطول. سيتم اعتماد الموديل الأولي. السبب: {exc}")
-            return parsed_data
-
-        content = (
-            response
-            .choices[0]
-            .message
-            .content
-        )
-
-        try:
-            adjusted = self.parse_json_response(content)
             self.validate_article(adjusted)
             return adjusted
-        except Exception as parse_err:
-            logger.warning(f"تعذر استخدام المقال المعدل بعد محاذاة الطول ({parse_err}). سيتم اعتماد المقال الأصلي.")
+        except Exception as exc:
+            logger.error(f"فشلت جميع محاولات محاذاة الطول ({exc}). سيتم اعتماد المقال الأولي.")
             return parsed_data
 
     # ==========================================================
@@ -2271,16 +2136,9 @@ Do not invent facts."""
             )
         )
 
-        if not (
-            cls.MIN_ARTICLE_CHARS
-            <= article_length
-            <= cls.MAX_ARTICLE_CHARS
-        ):
-
-            logger.warning(
-                f"الخبر خارج نطاق الطول النهائي: "
-                f"{article_length} حرف"
-            )
+        logger.info(
+            f"طول المقال النهائي المعتمد: {article_length} حرف (تم قبوله بالكامل كما هو)."
+        )
 
     # ==========================================================
     # PHONE NORMALIZATION
@@ -2290,51 +2148,8 @@ Do not invent facts."""
     def normalize_egyptian_phone(
         phone: str
     ) -> str:
-
-        if not phone:
-
-            return ""
-
-        phone = str(
-            phone
-        ).strip()
-
-        phone = re.sub(
-            r"[\s\-\(\)]",
-            "",
-            phone
-        )
-
-        # +201XXXXXXXXX
-        if re.fullmatch(
-            r"\+20\d{10}",
-            phone
-        ):
-
-            phone = (
-                "0"
-                + phone[3:]
-            )
-
-        # 201XXXXXXXXX
-        elif re.fullmatch(
-            r"20\d{10}",
-            phone
-        ):
-
-            phone = (
-                "0"
-                + phone[2:]
-            )
-
-        elif re.fullmatch(
-            r"01[0125]\d{8}",
-            phone
-        ):
-
-            pass
-
-        return phone
+        from services.whatsapp_service import clean_egyptian_phone
+        return clean_egyptian_phone(phone)
 
     # ==========================================================
     # BOLD NORMALIZATION
@@ -2443,6 +2258,115 @@ Do not invent facts."""
         return text
 
     # ==========================================================
+    # REPETITION DEDUPLICATION & CONTENT CLEANING HELPERS
+    # ==========================================================
+
+    @staticmethod
+    def clean_arabic_for_comparison(text: str) -> str:
+        """Normalizes Arabic text to compare sentence and heading similarity."""
+        if not text:
+            return ""
+        s = re.sub(r'[\*\#\"\'\`]', '', str(text)).strip()
+        s = re.sub(r'[إأآا]', 'ا', s)
+        s = re.sub(r'[ة]', 'ه', s)
+        s = re.sub(r'[ى]', 'ي', s)
+        s = re.sub(r'[^\w\s]', '', s)
+        return " ".join(s.split())
+
+    @classmethod
+    def is_near_duplicate(cls, s1: str, s2: str, threshold: float = 0.80) -> bool:
+        """Detects identical or near-identical sentences or phrases."""
+        c1 = cls.clean_arabic_for_comparison(s1)
+        c2 = cls.clean_arabic_for_comparison(s2)
+        if not c1 or not c2:
+            return False
+        if c1 == c2:
+            return True
+        if len(c1) >= 25 and len(c2) >= 25:
+            if c1 in c2 or c2 in c1:
+                return True
+        return SequenceMatcher(None, c1, c2).ratio() >= threshold
+
+    @classmethod
+    def clean_praise_cliches(cls, text: str, seen_praise: Set[str]) -> str:
+        """Caps repetitive praise clichés across the article to avoid redundant hyperbole."""
+        cleaned = str(text)
+        for pattern in cls.REPETITIVE_PRAISE_PATTERNS:
+            matches = list(re.finditer(pattern, cleaned))
+            if not matches:
+                continue
+            if pattern in seen_praise:
+                cleaned = re.sub(pattern, "المتخصص المشهود له بالخبرة", cleaned)
+            else:
+                seen_praise.add(pattern)
+                if len(matches) > 1:
+                    first_match = matches[0]
+                    prefix = cleaned[:first_match.end()]
+                    suffix = cleaned[first_match.end():]
+                    suffix = re.sub(pattern, "المتخصص المشهود له بالخبرة", suffix)
+                    cleaned = prefix + suffix
+        return cleaned
+
+    @classmethod
+    def deduplicate_sentences_in_paragraphs(
+        cls,
+        paragraphs: List[str],
+        seen_sentences: Set[str],
+        seen_praise: Set[str]
+    ) -> List[str]:
+        """
+        Removes redundant or near-duplicate sentences across paragraphs,
+        softens repeated praise, and varies repetitive consecutive openers.
+        """
+        cleaned_paragraphs = []
+        for p in paragraphs:
+            p_str = str(p).strip()
+            if not p_str:
+                continue
+
+            p_str = cls.clean_praise_cliches(p_str, seen_praise)
+
+            sentences = re.split(r'([.؟!]\s*|\n+)', p_str)
+            reconstructed = []
+            i = 0
+            while i < len(sentences):
+                sent = sentences[i].strip()
+                punct = sentences[i+1] if i + 1 < len(sentences) else ""
+                i += 2
+                if not sent:
+                    continue
+
+                if len(sent) < 15:
+                    reconstructed.append(sent + punct)
+                    continue
+
+                is_dup = False
+                for seen in seen_sentences:
+                    if cls.is_near_duplicate(sent, seen):
+                        is_dup = True
+                        break
+
+                if not is_dup:
+                    seen_sentences.add(sent)
+                    reconstructed.append(sent + punct)
+
+            final_p = " ".join("".join(reconstructed).split())
+            if final_p:
+                cleaned_paragraphs.append(final_p)
+
+        # Vary consecutive identical openers (e.g. وتأتي هذه... followed by وتأتي هذه...)
+        for idx in range(1, len(cleaned_paragraphs)):
+            prev_p = cleaned_paragraphs[idx - 1]
+            curr_p = cleaned_paragraphs[idx]
+            prev_words = prev_p.split()[:2]
+            curr_words = curr_p.split()[:2]
+            if prev_words and curr_words and prev_words == curr_words:
+                alt = cls.ALTERNATIVE_TRANSITIONS[(idx - 1) % len(cls.ALTERNATIVE_TRANSITIONS)]
+                cleaned_paragraphs[idx] = alt + " ".join(curr_p.split()[2:])
+
+        return cleaned_paragraphs
+
+    # ==========================================================
     # ARTICLE CONTENT NORMALIZATION
     # ==========================================================
 
@@ -2451,6 +2375,10 @@ Do not invent facts."""
         cls,
         parsed_data: dict
     ) -> dict:
+
+        seen_sentences: Set[str] = set()
+        seen_praise: Set[str] = set()
+        seen_subheadings: Set[str] = set()
 
         # ------------------------------------------------------
         # Lead
@@ -2471,6 +2399,20 @@ Do not invent facts."""
             lead
         )
 
+        # Register lead sentences to prevent body from repeating them
+        clean_lead_list = cls.deduplicate_sentences_in_paragraphs(
+            [lead],
+            seen_sentences,
+            seen_praise
+        )
+        lead = clean_lead_list[0] if clean_lead_list else lead
+
+        # Also register individual clauses of the lead so body cannot repeat them
+        for clause in re.split(r'[,،؛\.\?!]+', lead):
+            cl = clause.strip()
+            if len(cl) >= 25:
+                seen_sentences.add(cl)
+
         parsed_data[
             "lead_paragraph"
         ] = lead.strip()
@@ -2488,13 +2430,11 @@ Do not invent facts."""
             sections,
             list
         ):
-
             sections = []
 
         cleaned_sections = []
 
         for section in sections:
-
             if not isinstance(
                 section,
                 dict
@@ -2517,6 +2457,15 @@ Do not invent facts."""
                 "",
                 subheading
             )
+            # Strip trailing punctuation (periods, colons, dashes)
+            subheading = re.sub(r"[\.،؛:!\?–\-]+$", "", subheading).strip()
+
+            # Deduplicate or differentiate repeated subheadings
+            clean_sub = cls.clean_arabic_for_comparison(subheading)
+            if clean_sub in seen_subheadings and subheading:
+                subheading = f"{subheading} والتطبيقات العملية"
+            if clean_sub:
+                seen_subheadings.add(clean_sub)
 
             # --------------------------------------------------
             # Paragraphs
@@ -2531,7 +2480,6 @@ Do not invent facts."""
                 paragraphs,
                 str
             ):
-
                 paragraphs = [
                     paragraphs
                 ]
@@ -2540,19 +2488,16 @@ Do not invent facts."""
                 paragraphs,
                 list
             ):
-
                 paragraphs = []
 
             cleaned_paragraphs = []
 
             for paragraph in paragraphs:
-
                 paragraph = str(
                     paragraph
                 ).strip()
 
                 if not paragraph:
-
                     continue
 
                 paragraph = (
@@ -2571,6 +2516,13 @@ Do not invent facts."""
                     paragraph
                 )
 
+            # Deduplicate sentences within section against seen content
+            cleaned_paragraphs = cls.deduplicate_sentences_in_paragraphs(
+                cleaned_paragraphs,
+                seen_sentences,
+                seen_praise
+            )
+
             # --------------------------------------------------
             # Items
             # --------------------------------------------------
@@ -2584,7 +2536,6 @@ Do not invent facts."""
                 items,
                 str
             ):
-
                 items = [
                     items
                 ]
@@ -2593,19 +2544,17 @@ Do not invent facts."""
                 items,
                 list
             ):
-
                 items = []
 
             cleaned_items = []
+            seen_items: Set[str] = set()
 
             for item in items:
-
                 item = str(
                     item
                 ).strip()
 
                 if not item:
-
                     continue
 
                 item = (
@@ -2620,34 +2569,38 @@ Do not invent facts."""
                     )
                 )
 
-                cleaned_items.append(
-                    item
+                clean_item_key = cls.clean_arabic_for_comparison(item)
+                if clean_item_key and clean_item_key not in seen_items:
+                    seen_items.add(clean_item_key)
+                    cleaned_items.append(
+                        item
+                    )
+
+            # --------------------------------------------------
+            # Store (only if section has meaningful content)
+            # --------------------------------------------------
+
+            if cleaned_paragraphs or cleaned_items:
+                cleaned_sections.append(
+                    {
+                        "subheading": subheading,
+                        "paragraphs": cleaned_paragraphs,
+                        "is_bullet_list": bool(
+                            section.get(
+                                "is_bullet_list",
+                                False
+                            )
+                        ),
+                        "items": cleaned_items
+                    }
                 )
-
-            # --------------------------------------------------
-            # Store
-            # --------------------------------------------------
-
-            cleaned_sections.append(
-                {
-                    "subheading": subheading,
-                    "paragraphs": cleaned_paragraphs,
-                    "is_bullet_list": bool(
-                        section.get(
-                            "is_bullet_list",
-                            False
-                        )
-                    ),
-                    "items": cleaned_items
-                }
-            )
 
         parsed_data[
             "sections"
         ] = cleaned_sections
 
         # ------------------------------------------------------
-        # Title
+        # Title (Google SERP Clean Formatting)
         # ------------------------------------------------------
 
         title = str(
@@ -2663,9 +2616,60 @@ Do not invent facts."""
             title
         )
 
+        title = re.sub(r"\s*:\s*", "..", title)
+        title = re.sub(r"\s*\.{2,}\s*", "..", title)
+        title = re.sub(r"\s+-\s+", "..", title)
+        if ".." in title:
+            parts = title.split("..", 1)
+            title = f"{parts[0].strip()}..{parts[1].strip()}"
+
         parsed_data[
             "title"
-        ] = title
+        ] = title.strip()
+
+        # ------------------------------------------------------
+        # Focus Keyword (SEO 2026)
+        # ------------------------------------------------------
+        focus_kw = str(parsed_data.get("focus_keyword", "")).strip()
+        focus_kw = re.sub(r'[\*\#\"\'\`]', '', focus_kw).strip()
+        if not focus_kw:
+            client_name = parsed_data.get("client_name", "")
+            if client_name and client_name not in ["خبر صحفي", "عميل تليجرام"]:
+                focus_kw = client_name
+            else:
+                words = title.split()
+                focus_kw = " ".join(words[:3]) if words else "أخبار تحت الضوء"
+        parsed_data["focus_keyword"] = focus_kw
+
+        # ------------------------------------------------------
+        # LSI Keywords
+        # ------------------------------------------------------
+        raw_lsi = parsed_data.get("lsi_keywords", [])
+        if isinstance(raw_lsi, str):
+            raw_lsi = [k.strip() for k in raw_lsi.split(",") if k.strip()]
+        elif not isinstance(raw_lsi, list):
+            raw_lsi = []
+        parsed_data["lsi_keywords"] = [re.sub(r'[\*\#\"\'\`]', '', str(k)).strip() for k in raw_lsi if str(k).strip()]
+
+        # ------------------------------------------------------
+        # Meta Description (135 - 155 characters)
+        # ------------------------------------------------------
+        meta_desc = str(parsed_data.get("meta_description", "")).strip()
+        meta_desc = re.sub(r'[\*\#\"\'\`]', '', meta_desc).strip()
+        if len(meta_desc) < 100:
+            lead_clean = re.sub(r'\*\*', '', lead).strip()
+            # Extract first sentence or up to 110 chars
+            snippet = lead_clean[:110]
+            if " " in snippet:
+                snippet = snippet.rsplit(" ", 1)[0]
+            meta_desc = f"{snippet}.. اقرأ التفاصيل الكاملة عبر جريدة تحت الضوء."
+
+        if len(meta_desc) > 160:
+            meta_desc = meta_desc[:150].rsplit(" ", 1)[0] + "..."
+        parsed_data["meta_description"] = meta_desc
+
+        # FAQs (Deprecated / Removed)
+        parsed_data.pop("faqs", None)
 
         return parsed_data
 

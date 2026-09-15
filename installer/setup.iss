@@ -45,35 +45,35 @@ WizardSizePercent=100
 ; إعدادات أخرى
 ShowLanguageDialog=no
 PrivilegesRequiredOverridesAllowed=dialog
-UninstallDisplayIcon={app}\{#MyAppExeName}
+UninstallDisplayIcon={app}\ico.ico
 UninstallDisplayName={#MyAppName} v{#MyAppVersion}
 
 ; لغة مناسبة للعربية
-RightToLeft=no
 
 [Languages]
-Name: "arabic"; MessagesFile: "compiler:Default.isl"; LanguageName: "العربية"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-arabic.WelcomeLabel1=مرحباً بك في برنامج تثبيت%n{#MyAppName}
-arabic.WelcomeLabel2=سيقوم هذا الإعداد بتثبيت [name/ver] على جهازك.%n%nيُنصح بإغلاق جميع التطبيقات الأخرى قبل الاستمرار.%n%nاضغط التالي للمتابعة، أو إلغاء للخروج.
-arabic.FinishedHeadingLabel=اكتمل تثبيت [name]
-arabic.FinishedLabelNoIcons=تم تثبيت [name] بنجاح على جهازك.
-arabic.FinishedLabel=تم تثبيت [name] بنجاح. يمكنك تشغيل البرنامج من خلال الأيقونات المُنشأة.
-arabic.ClickFinish=اضغط إنهاء لإغلاق هذا الإعداد.
+WelcomeLabel1=مرحباً بك في برنامج تثبيت%n{#MyAppName}
+WelcomeLabel2=سيقوم هذا الإعداد بتثبيت [name/ver] على جهازك.%n%nيُنصح بإغلاق جميع التطبيقات الأخرى قبل الاستمرار.%n%nاضغط التالي للمتابعة، أو إلغاء للخروج.
+FinishedHeadingLabel=اكتمل تثبيت [name]
+FinishedLabelNoIcons=تم تثبيت [name] بنجاح على جهازك.
+FinishedLabel=تم تثبيت [name] بنجاح. يمكنك تشغيل البرنامج من خلال الأيقونات المُنشأة.
+ClickFinish=اضغط إنهاء لإغلاق هذا الإعداد.
 
 [Tasks]
-Name: "desktopicon"; Description: "إنشاء أيقونة على سطح المكتب"; GroupDescription: "أيقونات إضافية:"; Flags: checked
+Name: "desktopicon"; Description: "إنشاء أيقونة على سطح المكتب"; GroupDescription: "أيقونات إضافية:"
 Name: "startupicon"; Description: "تشغيل البرنامج تلقائياً مع بدء Windows"; GroupDescription: "إعدادات التشغيل:"; Flags: unchecked
 
 [Files]
 ; ملفات التطبيق الرئيسية
 Source: "..\dist\TahtElDooPublisher\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\ico.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; قائمة ابدأ
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\ico.ico"
-Name: "{group}\إلغاء تثبيت {#MyAppName}"; Filename: "{uninstallexe}"
+Name: "{group}\إلغاء تثبيت {#MyAppName}"; Filename: "{uninstallexe}"; IconFilename: "{app}\ico.ico"
 
 ; سطح المكتب
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\ico.ico"; Tasks: desktopicon
