@@ -1,6 +1,22 @@
 import os
 import sys
 import threading
+import ssl
+
+# Fix SSL Certificate Verification failure for urllib & HTTPS connections
+os.environ["PYTHONHTTPSVERIFY"] = "0"
+try:
+    import certifi
+    os.environ["SSL_CERT_FILE"] = certifi.where()
+    os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+except Exception:
+    pass
+
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Ensure project root is in Python path
@@ -34,6 +50,13 @@ if __name__ == "__main__":
     # 1. Launch HTTP health check thread for Render Free Web Service
     threading.Thread(target=run_health_server, daemon=True).start()
 
-    # 2. Launch Telegram Bot polling
-    from services.telegram_bot import run_bot
-    run_bot()
+    # 2. Check if standalone bot polling is explicitly requested
+    if os.getenv("RUN_STANDALONE_BOT", "").lower() == "true":
+        from telegram_bot.bot import run_bot
+        run_bot()
+    else:
+        print("ℹ️ Standalone bot polling is disabled here to prevent conflict with Contabo VPS Web Hub.")
+        print("💡 The Telegram bot is actively managed by Contabo VPS tahteldoo-web service.")
+        import time
+        while True:
+            time.sleep(3600)
