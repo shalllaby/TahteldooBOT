@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>جريدة تحت الضوء الإخبارية — منظومة النشر الذكي السحابية</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body data-theme="dark">
+
+  <!-- =======================================================================
+       LOGIN OVERLAY
+       ======================================================================= -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <div class="login-crest">
+        <img src="/img/logo.png" alt="شعار جريدة تحت الضوء الإخبارية" style="width: 100%; height: 100%; object-fit: contain;">
+      </div>
+      <h2 class="login-title">جريدة تحت الضوء الإخبارية</h2>
+      <p class="login-subtitle">منظومة النشر الصحفي الذكي والذكاء الاصطناعي v4.0</p>
+
+      <div id="login-error-box"
+        style="display:none; background: var(--color-error-bg); border: 1px solid var(--color-error-border); color: var(--color-error); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 13px; font-weight: 600;">
+      </div>
+
+      <!-- Unified Journalist Permanent Code Entrance -->
+      <div id="login-code-section">
+        <div class="form-group" style="text-align: right; margin-bottom: 16px;">
+          <label class="form-label"
+            style="font-size: 13.5px; font-weight: 700; color: var(--accent-gold); display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <span>🔑</span>
+            <span>كود الصحفي المعتمد (الدائم)</span>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="activation-code-input" class="form-input" placeholder="مثال: TD-B6AE60-ADMIN"
+              style="text-transform: uppercase; font-family: var(--font-code); font-weight: bold; font-size: 15px; letter-spacing: 1px; padding: 12px 14px;">
+            <button type="button" id="btn-verify-activation" class="btn btn-gold"
+              style="white-space: nowrap; padding: 0 20px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+              دخول 🚀
+            </button>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.5;">
+            💡 كودك الصحفي هو مفتاحك الدائم للدخول إلى المنظومة في أي وقت ومن أي جهاز.
+          </div>
+        </div>
+
+        <!-- Journalist Card Preview & Google Linking (Shown only on first-time registration) -->
+        <div id="activation-preview-box"
+          style="display: none; background: rgba(245, 158, 11, 0.08); border: 1px solid var(--accent-gold); border-radius: 12px; padding: 18px; margin-top: 14px; text-align: right;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12.5px; color: #34D399; font-weight: bold;">✅ كود معتمد جديد — يرجى ربط حساب
+              Google</span>
+            <span id="act-preview-role-badge" class="badge badge-gold">...</span>
+          </div>
+          <div style="font-size: 14.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+            👤 الصحفي: <span id="act-preview-name" style="color: var(--accent-gold);">...</span>
+          </div>
+          <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+            📞 الهاتف المسجل: <span id="act-preview-phone" style="font-family: var(--font-code);">...</span>
+          </div>
+          <div
+            style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            📌 <strong>خطوة تفعيل الحساب لأول مرة فقط:</strong> اضغط الزر أدناه لربط بريد Gmail الخاص بك لتفعيل النشر في
+            Blogger وحفظ جلستك الدائمة.
+          </div>
+          <button type="button" id="btn-act-google-login" class="btn btn-block"
+            style="background: #FFFFFF; color: #1F2937; border: 1px solid #E5E7EB; font-weight: 700; height: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 14px; cursor: pointer; border-radius: 8px;">
+            <svg width="22" height="22" viewBox="0 0 48 48">
+              <path fill="#EA4335"
+                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+              <path fill="#FBBC05"
+                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+              <path fill="#34A853"
+                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+            </svg>
+            <span>ربط حساب Google وتفعيل الدخول 🚀</span>
+          </button>
+        </div>
+
+        <!-- Emergency Admin Fallback (Collapsible) -->
+        <div
+          style="text-align: center; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          <button type="button" id="btn-toggle-admin-login"
+            style="background: none; border: none; font-size: 11.5px; color: var(--text-muted); cursor: pointer; text-decoration: underline;">
+            ⚙️ خيار الإدارة: دخول بكلمة المرور (للطوارئ فقط)
+          </button>
+          <form id="login-form" style="display: none; margin-top: 14px; text-align: right;">
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label class="form-label" style="font-size: 12px;">اسم المستخدم</label>
+              <input type="text" id="login-username" class="form-input" placeholder="اسم مستخدم الإدارة"
+                style="font-size: 13px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" style="font-size: 12px;">كلمة المرور</label>
+              <input type="password" id="login-password" class="form-input" placeholder="••••••••"
+                style="font-size: 13px;">
+            </div>
+            <button type="submit" id="btn-login-submit" class="btn btn-secondary btn-block"
+              style="height: 40px; font-size: 13px;">
+              🔐 دخول الطوارئ
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       APP CONTAINER
+       ======================================================================= -->
+  <div id="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand-header">
+          <div class="brand-crest">
+            <img src="/img/logo.png" alt="شعار جريدة تحت الضوء" style="width: 100%; height: 100%; object-fit: contain;">
+          </div>
+          <div class="brand-info">
+            <h1>جريدة تحت الضوء</h1>
+            <span>المنظومة السحابية v4.0</span>
+          </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="nav-menu">
+          <a class="nav-item active" data-view="create">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+            <span>إنشاء خبر سريع</span>
+          </a>
+          <a class="nav-item" data-view="verification">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span>فحص العملاء والتكرار</span>
+          </a>
+          <a class="nav-item" data-view="articles">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            <span>أرشيف الأخبار</span>
+          </a>
+          <a class="nav-item" data-view="accounting">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+            <span>الحسابات والأرباح</span>
+          </a>
+          <a class="nav-item admin-only" data-view="reporters">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span>فريق المراسلين</span>
+          </a>
+          <a class="nav-item admin-only" data-view="bot-control">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            <span>تحكم بوت التليجرام</span>
+            <span id="nav-bot-status-badge" class="badge"
+              style="font-size: 10.5px; padding: 2px 7px; margin-right: auto; background: rgba(16,185,129,0.2); color:#10B981; border: 1px solid rgba(16,185,129,0.3);">🟢
+              متصل</span>
+          </a>
+          <a class="nav-item" data-view="settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span>الإعدادات والكوتا</span>
+          </a>
+          <a class="nav-item" data-view="logs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="4 17 10 11 4 5" />
+              <line x1="12" y1="19" x2="20" y2="19" />
+            </svg>
+            <span>سجل العمليات اللحظي</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="server-status-pill">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot"></span>
+            السيرفر المركزي: متصل
+          </span>
+          <span id="footer-server-port" style="color: var(--accent-gold); font-weight: 700;">8000</span>
+        </div>
+        <div style="font-size: 10.5px; color: var(--text-muted); text-align: center;">
+          جريدة تحت الضوء © 2026<br>النظام الصحفي الذكي
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <main class="main-wrapper">
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <!-- Mobile Hamburger Button -->
+        <button class="mobile-menu-btn" id="btn-mobile-menu" aria-label="فتح القائمة">
+          ☰
+        </button>
+
+        <!-- Mobile Center Brand (shown only on mobile) -->
+        <div class="mobile-topbar-brand">
+          <div class="mobile-brand-crest">
+            <img src="/img/logo.png" alt="شعار جريدة تحت الضوء">
+          </div>
+          <span>جريدة تحت الضوء</span>
+        </div>
+
+        <div class="topbar-left">
+          <!-- 60s Rate-Limit Cooldown HUD -->
+          <div id="hud-cooldown" class="hud-pill success">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span id="cooldown-text">تدفق النشر: متاح فوراً</span>
+          </div>
+
+          <!-- Blogger Quota HUD -->
+          <div id="hud-quota" class="hud-pill gold">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="20" x2="18" y2="10" />
+              <line x1="12" y1="20" x2="12" y2="4" />
+              <line x1="6" y1="20" x2="6" y2="14" />
+            </svg>
+            <span id="quota-text">كوتا Blogger: جاري الفحص...</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Tri-Theme Switcher -->
+          <div class="theme-switcher">
+            <button class="theme-btn active" data-theme-set="dark" title="أسود فاخر">🌙</button>
+            <button class="theme-btn" data-theme-set="gray" title="رمادي عصري">🩶</button>
+            <button class="theme-btn" data-theme-set="light" title="أبيض صحفي">☀️</button>
+          </div>
+
+          <!-- Current User Profile Badge -->
+          <div class="user-badge" id="btn-user-profile">
+            <div class="user-avatar" id="topbar-avatar">أ</div>
+            <div style="text-align: right; line-height: 1.2;">
+              <div id="topbar-fullname" style="font-size: 13px; font-weight: 700;">المدير العام</div>
+              <div id="topbar-role" style="font-size: 10.5px; color: var(--accent-gold);">Super Admin</div>
+            </div>
+          </div>
+
+          <!-- Logout Button -->
+          <button id="btn-logout" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">
+            خروج
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT AREA -->
+      <div class="content-area">
+
+        <!-- ===================================================================
+             VIEW 1: CREATE ARTICLE (STUDIO)
+             =================================================================== -->
+        <section id="view-create" class="view-section active">
+
+          <!-- Mandatory AI Key Alert Banner -->
+          <div id="create-missing-ai-key-alert" class="glass-card"
+            style="display: none; border-color: rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.12); margin-bottom: 20px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 28px;">⚠️</span>
+                <div>
+                  <h4 style="color: #EF4444; font-size: 14px; font-weight: 800; margin-bottom: 3px;">تنبيه إجباري: لم
+                    تقم بإدخال مفتاح الذكاء الاصطناعي (Z.AI API Key) الخاص بك!</h4>
+                  <p style="font-size: 12.5px; color: var(--text-primary); margin: 0;">
+                    لن تتمكن من صياغة أو نشر المقالات حتى تُدخل مفتاح Z.AI الخاص بك في الإعدادات، وذلك لضمان عدم وجود
+                    ضغط سحابي وتمتعك بحصتك الشخصية الكاملة.
+                  </p>
+                </div>
+              </div>
+              <button type="button" id="btn-goto-settings-ai-key" class="btn btn-gold"
+                style="font-size: 13px; font-weight: 700; padding: 8px 18px; display: flex; align-items: center; gap: 8px;">
+                <span>⚙️</span>
+                <span>الانتقال للإعدادات وإدخال المفتاح</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Duplicate Alert Banner (Animated) -->
+          <div id="create-duplicate-alert" class="glass-card"
+            style="display: none; border-color: var(--color-warning); background: var(--color-warning-bg); margin-bottom: 20px;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">⚠️</span>
+                <div>
+                  <h4 style="color: var(--accent-gold); font-size: 14px; font-weight: 800;">تنبيه: تم العثور على خبر سابق لهذا العميل (خيار النشر مرة أخرى متاح)</h4>
+                  <p id="dup-alert-details" style="font-size: 12.5px; color: var(--text-primary); margin-top: 2px;"></p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <a id="btn-dup-open-post" href="#" target="_blank" class="btn btn-gold"
+                  style="font-size: 12px; padding: 6px 12px;">🔗 فتح الخبر المنشور</a>
+                <a id="btn-dup-open-wa" href="#" target="_blank" class="btn btn-success"
+                  style="font-size: 12px; padding: 6px 12px;">💬 شات واتساب نظيف</a>
+                <button type="button" id="btn-dup-dismiss" class="btn btn-secondary"
+                  style="font-size: 12px; padding: 6px 14px; border: 1px solid var(--accent-gold); color: var(--accent-gold); font-weight: 700;">
+                  ⚡ المتابعة والنشر مرة أخرى
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+
+            <!-- Left Column: Inputs & Dropzone -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+
+              <div class="glass-card">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon
+                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  المعلومات والتفاصيل الخام للخبر الصحفي
+                </div>
+                <div class="form-group">
+                  <textarea id="input-raw-notes" class="form-textarea" style="min-height: 220px;"
+                    placeholder="ضع هنا كافة البيانات والمعلومات والروابط الخام دون أي تنسيق...
+مثال: دكتور ناصر عبدالكريم - استشاري الجلدية والتجميل - عيادة الدقي - تقديم خدمات الفيلر والبوتكس وأحدث تقنيات الليزر - تليفون 01012345678..."></textarea>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted);">
+                  <span>💡 يقوم النظام تلقائياً بكشف رقم الهاتف والاسم وضبط قواعد الـ SEO.</span>
+                  <span id="char-count-raw">0 حرف</span>
+                </div>
+              </div>
+
+              <!-- Image Uploader Card -->
+              <div class="glass-card">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  صورة الخبر الرئيسية (اختياري)
+                </div>
+
+                <div class="image-uploader-container" style="display: flex; gap: 16px; align-items: center;">
+                  <div id="image-preview-box"
+                    style="width: 140px; height: 95px; border-radius: var(--radius-sm); background: var(--bg-input); border: 1px dashed var(--border-card); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+                    <img id="img-thumb" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                    <span id="img-placeholder"
+                      style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 4px;">لا توجد
+                      صورة</span>
+                  </div>
+
+                  <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; gap: 10px;">
+                      <label class="btn btn-secondary" style="font-size: 12.5px; cursor: pointer;">
+                        📁 اختيار صورة من الجهاز
+                        <input type="file" id="file-image-input" accept="image/*" style="display: none;">
+                      </label>
+                      <button id="btn-remove-image" class="btn btn-danger"
+                        style="display: none; font-size: 12px; padding: 6px 12px;">حذف الصورة</button>
+                    </div>
+                    <span style="font-size: 11.5px; color: var(--text-muted);">يدعم السحب والإفلات أو اللصق المباشر من
+                      الحافظة (Ctrl+V).</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Settings & Launch Actions -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+
+              <!-- Entity Type Selector -->
+              <div class="glass-card">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  صيغة المخاطبة في الواتساب
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13.5px;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="create-entity-type" value="plural" checked
+                      style="accent-color: var(--accent-gold);">
+                    🏢 جهة / مؤسسة / عيادة (حضراتكم)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="create-entity-type" value="male"
+                      style="accent-color: var(--accent-gold);">
+                    ♂️ شخص مذكر (حضرتك)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" name="create-entity-type" value="female"
+                      style="accent-color: var(--accent-gold);">
+                    ♀️ شخص مؤنث (حضرتِك)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Action Buttons Card -->
+              <div class="glass-card gold-glow" style="display: flex; flex-direction: column; gap: 12px;">
+                <button id="btn-direct-publish" class="btn btn-gold btn-block btn-lg"
+                  style="height: 54px; font-size: 15px; font-weight: 800;">
+                  🚀 صياغة ونشر الخبر والواتساب فوراً (ضغطة واحدة)
+                </button>
+
+                <div
+                  style="border-top: 1px solid var(--border-subtle); padding-top: 10px; font-size: 11.5px; color: var(--text-muted); text-align: center;">
+                  🛡️ ليمت الجريدة: خبر واحد كل دقيقة لحماية أرشفة جوجل ومنع الحظر.
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 3: CLIENT VERIFICATION & DUPLICATE CHECK
+             =================================================================== -->
+        <section id="view-verification" class="view-section">
+          <div class="glass-card" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div class="card-title" style="margin-bottom: 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                الاستعلام والتحقق من العملاء (منع التكرار المركزي)
+              </div>
+              <button id="btn-open-manual-register" onclick="if(window.openManualRegisterModal) window.openManualRegisterModal(); else { document.getElementById('modal-manual-register').style.display='flex'; }" class="btn btn-secondary" style="font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid rgba(217, 119, 6, 0.4); color: var(--accent-gold); background: rgba(217, 119, 6, 0.1); padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                <span>➕</span>
+                <span>تسجيل رقم يدوياً (تواصل خارجي)</span>
+              </button>
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <input type="text" id="verify-query-input" class="form-input" style="font-size: 15px; padding: 12px;"
+                placeholder="اكتب رقم هاتف العميل (مثال: 01012345678) أو اسم العميل للتحقق الفوري...">
+              <button id="btn-do-verify" class="btn btn-gold" style="min-width: 140px;">🔍 فحص العميل</button>
+            </div>
+          </div>
+
+          <!-- Result Container -->
+          <div id="verify-result-box">
+            <div class="glass-card" style="text-align: center; padding: 50px 20px;">
+              <span style="font-size: 48px; color: var(--text-muted);">🔍</span>
+              <h3 style="font-size: 16px; margin: 12px 0 6px;">أدخل رقم هاتف العميل واضغط فحص</h3>
+              <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto;">
+                سيقوم النظام بالتحقق اللحظي عبر السيرفر المركزي ومطابقة كافة الأخبار المنشورة سواء من صحفيي بوت
+                التليجرام أو محرري المنظومة السحابية.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 4: ARTICLES ARCHIVE
+             =================================================================== -->
+        <section id="view-articles" class="view-section">
+          <div class="glass-card">
+
+            <!-- Filters Header -->
+            <div class="archive-filters-row"
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
+              <div class="archive-search-box" style="display: flex; gap: 10px; flex: 1; max-width: 400px;">
+                <input type="text" id="archive-search-input" class="form-input"
+                  placeholder="بحث بعنوان المقال أو اسم العميل أو الهاتف...">
+              </div>
+              <div class="archive-actions-box" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button id="btn-toggle-my-articles" class="btn btn-secondary admin-only"
+                  style="font-size: 12px; font-weight: bold;">
+                  👤 مقالاتي فقط
+                </button>
+                <select id="archive-category-select" class="form-select" style="width: 140px;">
+                  <option value="الكل">كل الأقسام</option>
+                  <option value="صحة">صحة</option>
+                  <option value="تعليم">تعليم</option>
+                  <option value="أعمال">أعمال</option>
+                  <option value="شخصيات عامة">شخصيات عامة</option>
+                  <option value="تطوير ذات">تطوير ذات</option>
+                  <option value="التغذية العلاجية">التغذية العلاجية</option>
+                  <option value="خدمات">خدمات</option>
+                </select>
+                <button id="btn-refresh-articles" class="btn btn-secondary">🔄 تحديث</button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>عنوان المقال الصحفي</th>
+                    <th>الصحفي / الكاتب</th>
+                    <th>العميل</th>
+                    <th>الهاتف</th>
+                    <th>القسم</th>
+                    <th>الحالة</th>
+                    <th>تاريخ النشر</th>
+                    <th style="text-align: center;">الإجراءات</th>
+                    <!-- data-labels injected by JS for mobile -->
+                  </tr>
+                </thead>
+                <tbody id="articles-table-body">
+                  <tr>
+                    <td colspan="9" style="text-align: center; padding: 30px;">جاري تحميل الأرشيف...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW: JOURNALIST ACCOUNTING & FINANCIAL HUB
+             =================================================================== -->
+        <section id="view-accounting" class="view-section">
+          <!-- Policy & Role Info Bar -->
+          <div class="glass-card" style="margin-bottom: 20px; border: 1px solid var(--accent-gold-border);">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div
+                  style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(0,0,0,0.5)); border: 1.5px solid var(--accent-gold); display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 0 20px rgba(245,158,11,0.2);">
+                  💰
+                </div>
+                <div>
+                  <h2
+                    style="font-family: var(--font-display); font-size: 19px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">
+                    منظومة المحاسبة والأرباح الصحفية
+                  </h2>
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px;">
+                    <span class="badge badge-gold" id="acc-user-role-badge">...</span>
+                    <span style="color: var(--text-secondary);">السعر الرسمي للخبر: <strong
+                        id="acc-official-price-banner"
+                        style="color: var(--text-primary); font-family: var(--font-code);">150 ج.م</strong></span>
+                    <span>•</span>
+                    <span style="color: var(--text-secondary);">نسبة الجريدة المستقطعة: <strong id="acc-user-cut-banner"
+                        style="color: #F87171; font-family: var(--font-code);">-- ج.م</strong></span>
+                    <span>•</span>
+                    <span style="color: var(--text-secondary);">صافي ربحك في الخبر: <strong id="acc-user-net-banner"
+                        style="color: #10B981; font-family: var(--font-code);">-- ج.م</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action button -->
+              <button type="button" id="btn-open-add-transaction" class="btn btn-gold"
+                style="padding: 10px 18px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <span>➕</span>
+                <span>تسجيل تحصيل خبر جديد</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter Ribbon & Custom Date Picker -->
+          <div class="acc-filters-row"
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px;">
+            <div class="acc-filter-chips" style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary acc-filter-btn" data-range="today"
+                style="font-size: 12.5px; padding: 6px 14px;">اليوم</button>
+              <button type="button" class="btn btn-secondary acc-filter-btn" data-range="week"
+                style="font-size: 12.5px; padding: 6px 14px;">آخر 7 أيام</button>
+              <button type="button" class="btn btn-secondary acc-filter-btn" data-range="month"
+                style="font-size: 12.5px; padding: 6px 14px;">هذا الشهر</button>
+              <button type="button" class="btn btn-gold acc-filter-btn active" data-range="all"
+                style="font-size: 12.5px; padding: 6px 14px;">كل الفترات</button>
+              <button type="button" class="btn btn-secondary acc-filter-btn" data-range="custom"
+                style="font-size: 12.5px; padding: 6px 14px;">📅 فترة مخصصة</button>
+            </div>
+
+            <!-- Custom date range inputs -->
+            <div id="acc-custom-date-container" style="display: none; align-items: center; gap: 8px;">
+              <input type="date" id="acc-custom-start" class="form-input" style="padding: 5px 8px; font-size: 12px;">
+              <span style="font-size: 12px; color: var(--text-muted);">إلى</span>
+              <input type="date" id="acc-custom-end" class="form-input" style="padding: 5px 8px; font-size: 12px;">
+              <button type="button" id="btn-apply-custom-range" class="btn btn-gold"
+                style="font-size: 12px; padding: 6px 12px;">تطبيق</button>
+            </div>
+          </div>
+
+          <!-- 4 Financial KPI Cards -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">الأخبار المحاسب عليها</span>
+                <span style="font-size: 18px;">📰</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <span id="acc-stat-count"
+                  style="font-family: var(--font-code); font-size: 24px; font-weight: 800; color: var(--text-primary);">0</span>
+                <span style="font-size: 13px; color: var(--text-secondary);">خبر معتمد</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">إجمالي العمليات الموثقة</div>
+            </div>
+
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">إجمالي التحصيل من العملاء</span>
+                <span style="font-size: 18px;">💳</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <span id="acc-stat-gross"
+                  style="font-family: var(--font-code); font-size: 24px; font-weight: 800; color: #38BDF8;">0.00</span>
+                <span style="font-size: 13px; color: var(--text-secondary);">ج.م</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">المبالغ الكلية المحصلة</div>
+            </div>
+
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">نسبة الجريدة المستقطعة</span>
+                <span style="font-size: 18px;">🏛️</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <span id="acc-stat-cut"
+                  style="font-family: var(--font-code); font-size: 24px; font-weight: 800; color: #F87171;">0.00</span>
+                <span style="font-size: 13px; color: var(--text-secondary);">ج.م</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">المعلق للتوريد: <strong id="acc-stat-pending"
+                  style="color: #FBBF24;">0.00</strong> ج.م</div>
+            </div>
+
+            <div class="glass-card"
+              style="padding: 18px; border: 1.5px solid var(--accent-gold); box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--accent-gold); font-weight: 700;">صافي أرباحك المستحقة
+                  💰</span>
+                <span style="font-size: 18px;">💎</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <span id="acc-stat-net"
+                  style="font-family: var(--font-code); font-size: 26px; font-weight: 900; color: var(--accent-gold);">0.00</span>
+                <span style="font-size: 13px; color: var(--accent-gold); font-weight: bold;">ج.م</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">أرباحك الصافية بعد حسم النسبة</div>
+            </div>
+          </div>
+
+          <!-- Transactions History Table Card -->
+          <div class="glass-card" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div class="card-title" style="margin-bottom: 0;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px;">📜</span>
+                  سجل عمليات التحصيل المالي المعتمدة
+                </span>
+              </div>
+              <button type="button" id="btn-refresh-transactions" class="btn btn-secondary"
+                style="font-size: 12px; padding: 5px 12px;">
+                🔄 تحديث
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>عنوان الخبر الصحفي</th>
+                    <th>العميل</th>
+                    <th>رقم الهاتف</th>
+                    <th style="text-align: center;">سعر الدفع</th>
+                    <th style="text-align: center;">نسبة الجريدة</th>
+                    <th style="text-align: center;">صافي ربحك</th>
+                    <th>طريقة الدفع</th>
+                    <th>تاريخ التسجيل</th>
+                    <th>حالة التوريد</th>
+                    <th style="text-align: center;">إجراءات</th>
+                    <!-- data-labels injected by JS for mobile -->
+                  </tr>
+                </thead>
+                <tbody id="accounting-table-body">
+                  <tr>
+                    <td colspan="10" style="text-align: center; padding: 25px;">جاري تحميل المعاملات المالية...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ===================================================================
+               ADMIN MASTER FINANCIAL VAULT (CHIEF EDITOR EXCLUSIVE)
+               =================================================================== -->
+          <div id="admin-accounting-vault" class="admin-only" style="margin-top: 30px;">
+            <div class="glass-card" style="border: 1.5px solid var(--accent-gold); margin-bottom: 22px;">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 20px;">👑</span>
+                  خزينة الجريدة والرقابة المالية المركزية (خاص برئيس التحرير)
+                </span>
+                <span class="badge badge-gold" style="font-size: 11.5px;">صلاحية مالية عليا</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">
+                متابعة الخزينة الكلية للجريدة، إجمالي المتحصلات من جميع الصحفيين، تعديل أسعار الأخبار والنسب، وتسوية
+                المستحقات.
+              </p>
+
+              <!-- 4 Top Vault Cards -->
+              <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 22px;">
+                <div
+                  style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+                  <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">إجمالي خزينة الجريدة
+                    (المستقطع كلياً)</div>
+                  <div style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: #10B981;">
+                    <span id="vault-stat-total-cut">0.00</span> ج.م
+                  </div>
+                </div>
+
+                <div
+                  style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+                  <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">إجمالي أرباح الصحفيين
+                    المدفوعة</div>
+                  <div
+                    style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: var(--accent-gold);">
+                    <span id="vault-stat-payouts">0.00</span> ج.م
+                  </div>
+                </div>
+
+                <div
+                  style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+                  <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">المبالغ المعلقة قيد
+                    التوريد</div>
+                  <div style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: #F59E0B;">
+                    <span id="vault-stat-pending">0.00</span> ج.م
+                  </div>
+                </div>
+
+                <div
+                  style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px;">
+                  <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">إجمالي العمليات المنفذة
+                  </div>
+                  <div style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: #38BDF8;">
+                    <span id="vault-stat-tx-count">0</span> عملية
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price & Cut Policy Settings -->
+              <div
+                style="background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
+                <h4
+                  style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                  <span>⚙️</span>
+                  <span>تعديل سياسة الأسعار والنسب الرسمية العامة للجريدة</span>
+                </h4>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items: flex-end;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 12px;">سعر الخبر الرسمي العام (ج.م)</label>
+                    <input type="number" id="setting-official-price" class="form-input" value="150" step="1" min="1"
+                      style="font-size: 13px;">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 12px;">استقطاع صحفي معتمد (ج.م)</label>
+                    <input type="number" id="setting-cut-certified" class="form-input" value="75" step="1" min="0"
+                      style="font-size: 13px;">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 12px;">استقطاع صحفي مميز (ج.م)</label>
+                    <input type="number" id="setting-cut-premium" class="form-input" value="50" step="1" min="0"
+                      style="font-size: 13px;">
+                  </div>
+                  <button type="button" id="btn-save-financial-settings" class="btn btn-gold"
+                    style="height: 42px; font-size: 13px; font-weight: 700;">
+                    💾 حفظ تعديلات الأسعار
+                  </button>
+                </div>
+              </div>
+
+              <!-- Journalists Ledger Table -->
+              <h4
+                style="font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                <span>👥</span>
+                <span>كشف الحساب المالي التحليلي لجميع الصحفيين</span>
+              </h4>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>الصحفي</th>
+                      <th>الرتبة</th>
+                      <th>نسبة الاستقطاع المطبقة</th>
+                      <th style="text-align: center;">الأخبار</th>
+                      <th style="text-align: center;">إجمالي التحصيل</th>
+                      <th style="text-align: center;">حصة الجريدة</th>
+                      <th style="text-align: center;">صافي الصحفي</th>
+                      <th style="text-align: center;">المعلق للتوريد</th>
+                      <th style="text-align: center;">إجراءات الإدارة</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vault-reporters-ledger-body">
+                    <tr>
+                      <td colspan="9" style="text-align: center; padding: 20px;">جاري جلب كشوف الحسابات...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW: TELEGRAM BOT MASTER CONTROL HUB (ADMIN EXCLUSIVE)
+             =================================================================== -->
+        <section id="view-bot-control" class="view-section admin-only">
+          <!-- Top Master Control Bar -->
+          <div class="glass-card"
+            style="margin-bottom: 22px; border: 1.5px solid var(--accent-gold); box-shadow: 0 0 30px rgba(245, 158, 11, 0.15);">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div
+                  style="width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(0,0,0,0.5)); border: 1.5px solid var(--accent-gold); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 0 20px rgba(245,158,11,0.3);">
+                  🤖
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2
+                      style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text-primary);">
+                      منظومة التحكم المركزية ببوت التليجرام
+                    </h2>
+                    <span id="bot-main-badge" class="badge badge-success" style="font-size: 12px; padding: 4px 10px;">
+                      🟢 متصل ويعمل بنشاط
+                    </span>
+                  </div>
+                  <div
+                    style="display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 13px; color: var(--text-secondary);">
+                    <span>معرف البوت: <strong id="bot-handle-text"
+                        style="color: var(--accent-gold); font-family: var(--font-code);">@TahteldooBOT</strong></span>
+                    <span>•</span>
+                    <span>المحرك: <span style="font-family: var(--font-code); color: #38BDF8;">Python-Telegram-Bot
+                        v20+</span></span>
+                    <span>•</span>
+                    <span>التحديث: <span id="bot-last-sync-time"
+                        style="font-family: var(--font-code); color: var(--text-muted);">لحظي</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lifecycle Command Actions -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" id="btn-bot-start" class="btn btn-success"
+                  style="padding: 9px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>⚡</span>
+                  <span>تشغيل البوت</span>
+                </button>
+                <button type="button" id="btn-bot-restart" class="btn btn-warning"
+                  style="background: rgba(245,158,11,0.2); color: #F59E0B; border: 1px solid rgba(245,158,11,0.5); padding: 9px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>🔄</span>
+                  <span>إعادة التشغيل</span>
+                </button>
+                <button type="button" id="btn-bot-stop" class="btn btn-danger"
+                  style="padding: 9px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>⏹️</span>
+                  <span>إيقاف البوت</span>
+                </button>
+                <button type="button" id="btn-bot-refresh" class="btn btn-secondary"
+                  style="padding: 9px 14px; font-size: 13px;">
+                  🔄 تحديث
+                </button>
+              </div>
+            </div>
+
+            <!-- Error Banner (if any) -->
+            <div id="bot-error-alert"
+              style="display: none; margin-top: 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--color-danger); border-radius: 8px; padding: 10px 14px; color: #FCA5A5; font-size: 12.5px;">
+              <strong>تنبيه البوت:</strong> <span id="bot-error-alert-text"></span>
+            </div>
+          </div>
+
+          <!-- 4 Telemetry Metrics Cards -->
+          <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 22px;">
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">مدة التشغيل المستمر (Uptime)</span>
+                <span style="font-size: 18px;">⏱️</span>
+              </div>
+              <div id="bot-stat-uptime"
+                style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: #10B981; margin-bottom: 4px;">
+                --:--:--</div>
+              <div id="bot-stat-started-at" style="font-size: 11.5px; color: var(--text-muted);">منذ: --</div>
+            </div>
+
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">أخبار اليوم عبر البوت</span>
+                <span style="font-size: 18px;">📰</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <span id="bot-stat-articles-today"
+                  style="font-family: var(--font-code); font-size: 24px; font-weight: 800; color: var(--accent-gold);">0</span>
+                <span style="font-size: 13px; color: var(--text-secondary);">خبر اليوم</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">إجمالي مقالات البوت: <strong
+                  id="bot-stat-articles-total" style="color: var(--text-primary);">0</strong></div>
+            </div>
+
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">الجلسات النشطة بالذاكرة</span>
+                <span style="font-size: 18px;">🧠</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <span id="bot-stat-sessions"
+                  style="font-family: var(--font-code); font-size: 24px; font-weight: 800; color: #38BDF8;">0</span>
+                <span style="font-size: 13px; color: var(--text-secondary);">جلسة صياغة</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">صحفيين يتواصلون مع البوت الآن</div>
+            </div>
+
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12.5px; color: var(--text-muted);">استهلاك ذاكرة البوت (RSS)</span>
+                <span style="font-size: 18px;">💾</span>
+              </div>
+              <div id="bot-stat-memory"
+                style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: #F59E0B; margin-bottom: 4px;">
+                -- MB</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">المراسلين المعتمدين: <strong
+                  id="bot-stat-reporters-count" style="color: var(--text-primary);">0</strong></div>
+            </div>
+          </div>
+
+          <!-- Broadcast and Quick Operations (2 Columns) -->
+          <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 20px; margin-bottom: 22px;">
+
+            <!-- Broadcast Card -->
+            <div class="glass-card">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px;">📣</span>
+                  بث تعميم وإشعار فوري لجميع المراسلين
+                </span>
+                <span class="badge badge-gold" style="font-size: 11px;">تليجرام مباشر</span>
+              </div>
+              <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
+                أرسل توجيهات تحريرية، تنبيهات سياسة النشر، أو إشعارات عاجلة تصل فوراً في محادثة كل صحفي مسجل بالبوت.
+              </p>
+              <div class="form-group" style="margin-bottom: 12px;">
+                <textarea id="bot-broadcast-message" class="form-input" rows="4"
+                  placeholder="اكتب نص التعميم هنا... (يدعم الرموز التعبيرية والتنسيق النصي)"
+                  style="resize: vertical; font-size: 13px; line-height: 1.6;"></textarea>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div id="bot-broadcast-status" style="font-size: 12.5px; font-weight: 600;"></div>
+                <button type="button" id="btn-bot-send-broadcast" class="btn btn-gold"
+                  style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
+                  <span>🚀</span>
+                  <span>إرسال التعميم لجميع الصحفيين</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Diagnostics & Integration Status -->
+            <div class="glass-card">
+              <div class="card-title">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px;">🛡️</span>
+                  حالة البيئة والربط السحابي
+                </span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-secondary);">توكن البوت المعتمد:</span>
+                  <span style="color: #10B981; font-family: var(--font-code); font-weight: 600;">✅ معرف في .env</span>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-secondary);">نمط الاستماع (Receiver):</span>
+                  <span style="color: var(--accent-gold); font-family: var(--font-code); font-weight: 600;">Long Polling
+                    Loop</span>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-secondary);">الربط بمدونة Blogger:</span>
+                  <span style="color: #10B981; font-weight: 600;">✅ متصل بالـ Central Hub</span>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <span style="color: var(--text-secondary);">إعادة التشغيل الذاتي:</span>
+                  <span style="color: #38BDF8; font-weight: 600;">🛡️ مفعل عند الانقطاع</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Telegram Reporters Table inside Bot Control -->
+          <div class="glass-card" style="margin-bottom: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <div class="card-title" style="margin-bottom: 2px;">
+                  <span style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">👥</span>
+                    إدارة مراسلي التليجرام ومفاتيح الـ API
+                  </span>
+                </div>
+                <p style="font-size: 12.5px; color: var(--text-muted);">
+                  قائمة الصحفيين المصرح لهم بالنشر عبر البوت ومفاتيحهم الخاصة وتتبع إنتاجيتهم اللحظية.
+                </p>
+              </div>
+              <button type="button" id="btn-open-add-bot-reporter" class="btn btn-gold" style="font-size: 13px;">
+                + تسجيل صحفي جديد للبوت
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>الصحفي</th>
+                    <th>معرّف تليجرام (Telegram ID)</th>
+                    <th>الصفة / الرتبة</th>
+                    <th>مفتاح الربط (API Key)</th>
+                    <th style="text-align: center;">أخبار اليوم</th>
+                    <th style="text-align: center;">الإجمالي</th>
+                    <th style="text-align: center;">الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="bot-reporters-table-body">
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 25px;">جاري تحميل بيانات المراسلين...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Bot Terminal Console -->
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="card-title" style="margin-bottom: 0;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 18px;">💻</span>
+                  البث الحي لسجلات وأحداث بوت التليجرام (Telegram Live Console)
+                </span>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="bot-terminal-level-filter" class="form-select"
+                  style="width: 120px; padding: 5px 8px; font-size: 12px;">
+                  <option value="ALL">كل الأحداث</option>
+                  <option value="INFO">معلومات (INFO)</option>
+                  <option value="ERROR">أخطاء فقط (ERROR)</option>
+                </select>
+                <button type="button" id="btn-clear-bot-terminal" class="btn btn-secondary"
+                  style="font-size: 12px; padding: 5px 10px;">
+                  مسح الشاشة
+                </button>
+                <button type="button" id="btn-refresh-bot-terminal" class="btn btn-secondary"
+                  style="font-size: 12px; padding: 5px 10px;">
+                  🔄 تحديث
+                </button>
+              </div>
+            </div>
+
+            <div id="bot-terminal-stream"
+              style="background: #060910; border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-sm); padding: 14px; font-family: var(--font-code); font-size: 12px; height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);">
+              <div style="color: var(--text-muted);">جاري تهيئة كونسول البوت اللحظي...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 5: REPORTERS & TELEGRAM BOT HUB (PREMIUM REDESIGN)
+             =================================================================== -->
+        <section id="view-reporters" class="view-section admin-only">
+          <!-- Page Header with Actions -->
+          <div class="reporters-page-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <span style="font-size: 24px;">👥</span>
+                <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">
+                  إدارة فريق المراسلين وبوت التليجرام
+                </h2>
+                <span id="rep-header-total-badge" class="badge badge-gold" style="font-size: 11.5px;">-- صحفي</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                إصدار وتفويض مفاتيح الربط الذكية (Z.AI API Keys) للصحفيين وتتبع إنتاجية النشر اللحظية.
+              </p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="btn-refresh-reporters" class="btn btn-secondary" style="padding: 9px 14px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                <span>🔄</span>
+                <span>تحديث</span>
+              </button>
+              <button type="button" id="btn-open-add-reporter-modal" class="btn btn-gold" style="padding: 9px 18px; font-size: 13.5px; font-weight: 800; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 18px rgba(245, 158, 11, 0.35);">
+                <span>✨</span>
+                <span>+ إضافة صحفي جديد</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Telemetry KPI Cards for Reporters -->
+          <div class="reporters-stats-grid">
+            <div class="glass-card stat-kpi-card">
+              <div class="stat-kpi-header">
+                <span>إجمالي المراسلين</span>
+                <span class="stat-kpi-icon">👥</span>
+              </div>
+              <div class="stat-kpi-val" id="rep-stat-total">--</div>
+              <div class="stat-kpi-sub">المعتمدون بنظام البوت</div>
+            </div>
+
+            <div class="glass-card stat-kpi-card">
+              <div class="stat-kpi-header">
+                <span>مفاتيح خاصة نشطة</span>
+                <span class="stat-kpi-icon">🔑</span>
+              </div>
+              <div class="stat-kpi-val text-success" id="rep-stat-active-keys">--</div>
+              <div class="stat-kpi-sub">بحصة ذكاء اصطناعي مستقلة</div>
+            </div>
+
+            <div class="glass-card stat-kpi-card">
+              <div class="stat-kpi-header">
+                <span>مفتاح النظام الافتراضي</span>
+                <span class="stat-kpi-icon">⚡</span>
+              </div>
+              <div class="stat-kpi-val text-warning" id="rep-stat-system-keys">--</div>
+              <div class="stat-kpi-sub">يشاركون مفتاح البوت العام</div>
+            </div>
+
+            <div class="glass-card stat-kpi-card highlight-gold">
+              <div class="stat-kpi-header">
+                <span style="color: var(--accent-gold); font-weight: 700;">إجمالي مقالات الفريق 📰</span>
+                <span class="stat-kpi-icon">💎</span>
+              </div>
+              <div class="stat-kpi-val text-gold" id="rep-stat-total-articles">--</div>
+              <div class="stat-kpi-sub">منها <strong id="rep-stat-today-articles" style="color:#10B981;">0</strong> نُشرت اليوم</div>
+            </div>
+          </div>
+
+          <!-- Search & Filter Controls Ribbon -->
+          <div class="reporters-filter-ribbon">
+            <div class="reporters-search-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="reporters-search-input" class="form-input" placeholder="ابحث بالاسم، معرف تليجرام، أو مفتاح الربط...">
+              <button type="button" id="reporters-clear-search" class="clear-search-btn" title="مسح">✕</button>
+            </div>
+
+            <div class="reporters-filter-tabs">
+              <button type="button" class="rep-tab-btn active" data-filter="all">الكل (<span id="tab-count-all">0</span>)</button>
+              <button type="button" class="rep-tab-btn" data-filter="custom-key">🔑 مفتاح خاص (<span id="tab-count-custom">0</span>)</button>
+              <button type="button" class="rep-tab-btn" data-filter="system-key">⚠️ مفتاح النظام (<span id="tab-count-system">0</span>)</button>
+              <button type="button" class="rep-tab-btn" data-filter="top-producers">🏆 الأكثر نشاطاً</button>
+            </div>
+
+            <div class="view-mode-toggle">
+              <button type="button" id="rep-btn-view-cards" class="view-toggle-btn active" title="عرض بطاقات">🎴</button>
+              <button type="button" id="rep-btn-view-table" class="view-toggle-btn" title="عرض جدول">📋</button>
+            </div>
+          </div>
+
+          <!-- Cards Grid View Container -->
+          <div id="reporters-cards-container" class="reporters-grid">
+            <!-- Cards rendered dynamically by JS -->
+          </div>
+
+          <!-- Alternative Table View Container (Hidden by default) -->
+          <div id="reporters-table-container" class="glass-card" style="display: none; padding: 0; overflow: hidden; margin-top: 10px;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>الصحفي</th>
+                    <th>معرف تليجرام</th>
+                    <th>الصفة التحريرية</th>
+                    <th>مفتاح الربط (API Key)</th>
+                    <th style="text-align: center;">أخبار اليوم</th>
+                    <th style="text-align: center;">الإجمالي</th>
+                    <th>تاريخ التسجيل</th>
+                    <th style="text-align: center;">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="reporters-table-body">
+                  <!-- Table rows rendered dynamically by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 6: SETTINGS & BLOGGER POOL
+             =================================================================== -->
+        <section id="view-settings" class="view-section">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+            <!-- Blogger Account & Google Identity Card -->
+            <div class="glass-card" style="border: 1px solid var(--accent-gold-border);">
+              <div class="card-title"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    style="width: 20px; height: 20px;">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+                  </svg>
+                  <span>حساب Google ومدونة Blogger</span>
+                </div>
+                <span id="settings-blogger-status" class="badge badge-success">🟢 متصل بنجاح</span>
+              </div>
+
+              <!-- Connected Google Account Identity Badge -->
+              <div id="google-account-card-connected"
+                style="background: rgba(0, 0, 0, 0.45); border: 1.5px solid var(--accent-gold-border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                  <div id="google-account-avatar-wrapper"
+                    style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent-gold); display: flex; align-items: center; justify-content: center; background: #1a2234; flex-shrink: 0;">
+                    <img id="google-account-avatar" src="/assets/google_icon.png" alt="Google Avatar"
+                      style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/favicon.ico'">
+                  </div>
+                  <div style="min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span id="google-account-name"
+                        style="font-weight: 800; font-size: 14px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">محمد
+                        شلبي</span>
+                      <span class="badge"
+                        style="font-size: 10.5px; padding: 2px 7px; background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid rgba(16,185,129,0.3); white-space: nowrap;">موثق
+                        Google</span>
+                    </div>
+                    <div id="google-account-email"
+                      style="font-family: var(--font-code); font-size: 12.5px; color: var(--accent-gold); direction: ltr; text-align: right; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      shalllaby1@gmail.com</div>
+                  </div>
+                </div>
+                <button type="button" id="btn-logout-google" class="btn btn-secondary"
+                  style="font-size: 11.5px; padding: 6px 12px; color: #EF4444; border-color: rgba(239,68,68,0.35); display: flex; align-items: center; gap: 6px; flex-shrink: 0; font-weight: 700;"
+                  title="تسجيل الخروج من حساب Google وفك الربط">
+                  <span>🚪</span>
+                  <span>تسجيل خروج</span>
+                </button>
+              </div>
+
+              <!-- Disconnected State Banner (Hidden when connected) -->
+              <div id="google-account-card-disconnected"
+                style="display: none; background: rgba(239, 68, 68, 0.08); border: 1.5px dashed rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: center;">
+                <div style="font-size: 26px; margin-bottom: 6px;">⚠️</div>
+                <div style="font-weight: 700; color: #EF4444; font-size: 14px; margin-bottom: 4px;">لا يوجد حساب Google
+                  متصل حالياً بالنظام</div>
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0;">يجب ربط حساب Google بصلاحيات Blogger
+                  لتفعيل النشر التلقائي ومزامنة أخبار الجريدة.</p>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <span style="font-size: 12.5px; color: var(--text-secondary);">معرّف المدونة (Blog ID):</span>
+                  <span id="settings-blog-id"
+                    style="font-family: var(--font-code); color: var(--accent-gold); font-weight: 700;">...</span>
+                </div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <span style="font-size: 12.5px; color: var(--text-secondary);">الكوتا المستهلكة اليوم:</span>
+                  <span id="settings-quota-text" style="font-weight: 700; font-family: var(--font-code);">...</span>
+                </div>
+              </div>
+
+              <!-- Action Button: Connect / Switch New Google Account -->
+              <button type="button" id="btn-login-new-google" class="btn btn-gold btn-block"
+                style="font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px;">
+                <span>🔄</span>
+                <span>تسجيل بحساب Google جديد (أو تبديل الحساب)</span>
+              </button>
+            </div>
+
+            <!-- AI Engine & Personal Journalist API Key -->
+            <div class="glass-card" id="card-ai-engine">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="2" />
+                    <path
+                      d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
+                  </svg>
+                  محرك الذكاء الاصطناعي (Z.AI / GLM)
+                </span>
+                <span id="settings-ai-key-status" class="badge" style="font-size: 11px;">جاري الفحص...</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="form-group">
+                  <label class="form-label">النموذج المعتمد</label>
+                  <input type="text" id="settings-ai-model" class="form-input" value="glm-4.7-flash" readonly
+                    style="background: rgba(255,255,255,0.03); color: var(--accent-gold); font-weight: 600;">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label"
+                    style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span>🔑 مفتاح Z.AI API الخاص بك</span>
+                      <span style="color: #EF4444; font-weight: 800; font-size: 11px;">(إجباري قبل بدء النشر)</span>
+                    </span>
+                  </label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="settings-user-zai-key" class="form-input" autocomplete="off"
+                      spellcheck="false" placeholder="ضع هنا مفتاح Z.AI الخاص بك (مثال: xxxxxxxxx.xxxxxxxxx)"
+                      style="background: #0B0F19 !important; color: #F8FAFC !important; border: 1px solid rgba(245, 158, 11, 0.28) !important; padding-left: 45px; font-family: var(--font-code); font-size: 13.5px; height: 44px; border-radius: var(--radius-sm); box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);">
+                    <button type="button" id="btn-toggle-ai-key-visibility"
+                      style="position: absolute; left: 8px; background: transparent; border: none; color: #94A3B8; cursor: pointer; padding: 6px 10px; font-size: 16px; border-radius: 6px; display: flex; align-items: center; justify-content: center;"
+                      title="إظهار / إخفاء المفتاح">👁️</button>
+                  </div>
+                  <div id="ai-key-masked-display"
+                    style="font-size: 12.5px; color: var(--accent-gold); margin-top: 6px; font-family: var(--font-code); display: none;">
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" id="btn-save-ai-key" class="btn btn-gold btn-block"
+                    style="font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px;">
+                    <span>💾</span>
+                    <span>حفظ وتفعيل المفتاح الشخصي</span>
+                  </button>
+                  <button type="button" id="btn-clear-ai-key" class="btn btn-secondary"
+                    style="font-size: 13px; padding: 10px 14px; display: none;" title="حذف المفتاح">
+                    <span>🗑️</span>
+                  </button>
+                </div>
+
+                <div
+                  style="padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border-radius: var(--radius-sm); border-right: 3px solid #3B82F6; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                  💡 <strong>نظام الحصص الفردية:</strong> كل صحفي يعمل بمفتاح API الخاص به مباشرة لتفادي أي ضغط سحابي أو
+                  توقف، وضمان أقصى سرعة واستقلالية في الصياغة والنشر دون أي قيود مشتركة.
+                </div>
+              </div>
+            </div>
+
+            <!-- Journalist Roles & Permissions Management (Admin Only) -->
+            <div id="admin-users-card" class="glass-card admin-only" style="grid-column: 1 / -1; margin-top: 8px;">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  👑 إدارة رتب وصلاحيات الصحفيين والمحررين
+                </span>
+                <span class="badge badge-gold" style="font-size: 11px;">صلاحية حصرية لرئيس التحرير</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                يمكنك ترقية الصحفيين المسجلين عبر Google وتحديد رتبهم بين (صحفي عادي، صحفي مميز، أو رئيس تحرير).
+              </p>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>الصحفي</th>
+                      <th>البريد الإلكتروني (Gmail)</th>
+                      <th>تاريخ الانضمام</th>
+                      <th>الرتبة الحالية</th>
+                      <th style="text-align: center;">تحديد الرتبة الجديدة</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-body">
+                    <tr>
+                      <td colspan="5" style="text-align: center; padding: 20px;">جاري تحميل قائمة الصحفيين...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Journalist Activation Codes Generator Card (Admin Only) -->
+            <div id="admin-activation-card" class="glass-card admin-only"
+              style="grid-column: 1 / -1; margin-top: 18px;">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  🔑 إصدار وتوليد أكواد التفعيل الصحفية (دعوات الانضمام)
+                </span>
+                <span class="badge badge-gold" style="font-size: 11px;">نظام الدعوات المغلق</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                قم بإصدار كود تفعيل خاص بكل صحفي لتزويده به. عند إدخال الكود، سيتعرف النظام على بياناته ورتبته ويطلب منه
+                ربط حسابه في Google لمرة واحدة فقط.
+              </p>
+
+              <!-- Generate Form -->
+              <form id="form-create-activation-code"
+                style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr auto; gap: 12px; margin-bottom: 24px; align-items: flex-end; background: rgba(255,255,255,0.02); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <div class="form-group" style="margin-bottom: 0; text-align: right;">
+                  <label class="form-label">اسم الصحفي الكامل</label>
+                  <input type="text" id="new-act-name" class="form-input" placeholder="مثال: حسام الدين محمود" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; text-align: right;">
+                  <label class="form-label">رقم الهاتف (واتساب)</label>
+                  <input type="text" id="new-act-phone" class="form-input" placeholder="010XXXXXXXX" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; text-align: right;">
+                  <label class="form-label">الرتبة الممنوحة</label>
+                  <select id="new-act-role" class="form-select">
+                    <option value="journalist">✍️ صحفي معتمد</option>
+                    <option value="editor" selected>⭐ صحفي مميز</option>
+                    <option value="admin">👑 رئيس تحرير</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-gold"
+                  style="height: 42px; padding: 0 18px; font-weight: bold; white-space: nowrap; cursor: pointer;">
+                  توليد كود التفعيل 🔑
+                </button>
+              </form>
+
+              <!-- Table of Codes -->
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>كود التفعيل</th>
+                      <th>الصحفي</th>
+                      <th>رقم الهاتف</th>
+                      <th>الرتبة</th>
+                      <th>الحالة</th>
+                      <th>تاريخ الإصدار</th>
+                      <th style="text-align: center;">الإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activation-codes-table-body">
+                    <tr>
+                      <td colspan="7" style="text-align: center; padding: 20px;">جاري تحميل الأكواد...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 7: REAL-TIME LOGS RADAR
+             =================================================================== -->
+        <section id="view-logs" class="view-section">
+          <div class="glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <div class="card-title" style="margin-bottom: 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="4 17 10 11 4 5" />
+                  <line x1="12" y1="19" x2="20" y2="19" />
+                </svg>
+                رادار العمليات اللحظي (Live Operations Stream)
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <select id="logs-filter-level" class="form-select" style="width: 120px; padding: 6px 10px;">
+                  <option value="ALL">كل المستويات</option>
+                  <option value="INFO">معلومات (INFO)</option>
+                  <option value="WARNING">تحذيرات (WARN)</option>
+                  <option value="ERROR">أخطاء (ERROR)</option>
+                </select>
+                <button id="btn-refresh-logs" class="btn btn-secondary" style="font-size: 12px;">🔄 تحديث</button>
+              </div>
+            </div>
+
+            <!-- Console Terminal Box -->
+            <div id="logs-terminal"
+              style="background: #060910; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px; font-family: var(--font-code); font-size: 12px; height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+              <div style="color: var(--text-muted);">جاري الاتصال برادار السجلات عبر WebSockets...</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- =======================================================================
+       PUBLISH PROGRESS & SUCCESS CELEBRATION MODAL
+       ======================================================================= -->
+  <div id="publish-modal-overlay"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(20px); z-index: 2500; align-items: center; justify-content: center; padding: 20px;">
+    <div class="publish-modal-card"
+      style="width: 560px; max-width: 95%; background: #121826; border: 1.5px solid var(--accent-gold); border-radius: 18px; padding: 32px 28px; box-shadow: 0 0 50px rgba(245, 158, 11, 0.25), 0 20px 40px rgba(0,0,0,0.8); text-align: center; position: relative;">
+      <div class="modal-sheet-handle"></div>
+
+      <!-- 1. PROGRESS STATE -->
+      <div id="publish-modal-progress" style="display: block;">
+        <div class="progress-crest"
+          style="width: 72px; height: 72px; margin: 0 auto 18px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(0,0,0,0.5)); border: 2px solid var(--accent-gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px var(--accent-gold-glow); animation: pulseGlow 1.8s infinite alternate;">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="var(--accent-gold)" stroke-width="2">
+            <path
+              d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+          </svg>
+        </div>
+
+        <h3 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">
+          جاري صياغة ونشر الخبر الصحفي...
+        </h3>
+        <p id="publish-stage-text"
+          style="font-size: 13.5px; color: var(--accent-gold); font-weight: 600; margin-bottom: 24px; min-height: 22px;">
+          ⚡ جاري استلام وتدقيق معلومات الخبر...
+        </p>
+
+        <!-- Progress Bar & Percentage -->
+        <div
+          style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 12.5px; color: var(--text-muted);">مؤشر الإنجاز والاعتماد</span>
+            <span id="publish-percent-text"
+              style="font-family: var(--font-code); font-size: 18px; font-weight: 800; color: var(--accent-gold);">1%</span>
+          </div>
+
+          <div
+            style="width: 100%; height: 12px; background: rgba(0,0,0,0.5); border-radius: 6px; overflow: hidden; border: 1px solid rgba(245,158,11,0.2);">
+            <div id="publish-progress-bar"
+              style="width: 1%; height: 100%; background: linear-gradient(90deg, #F59E0B, #FBBF24); border-radius: 6px; box-shadow: 0 0 16px rgba(245,158,11,0.8); transition: width 0.3s ease;">
+            </div>
+          </div>
+        </div>
+
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
+          <span>🤖 صياغة الذكاء الاصطناعي Z.AI + ربط سحابي Blogger</span>
+          <span id="publish-elapsed-timer" style="font-family: var(--font-code);">الوقت: 00:01 ث</span>
+        </div>
+
+        <!-- Real-time Live Terminal Output Strip -->
+        <div id="publish-live-log-box"
+          style="background: rgba(0,0,0,0.65); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 7px 12px; font-family: var(--font-code); font-size: 11.5px; color: #10B981; text-align: right; min-height: 28px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px;">
+          <span style="color: var(--accent-gold); font-weight: bold; flex-shrink: 0;">[تتبع السيرفر اللحظي]:</span>
+          <span id="publish-live-log-text" style="color: #94A3B8; overflow: hidden; text-overflow: ellipsis;">في انتظار
+            استجابة السيرفر...</span>
+        </div>
+      </div>
+
+      <!-- 2. SUCCESS CELEBRATION STATE -->
+      <div id="publish-modal-success" style="display: none;">
+        <div
+          style="width: 76px; height: 76px; margin: 0 auto 16px; background: rgba(16, 185, 129, 0.15); border: 2px solid #10B981; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 35px rgba(16, 185, 129, 0.4);">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#10B981" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+
+        <h3 style="font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">
+          🎉 تم نشر الخبر بنجاح بالجريدة!
+        </h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">
+          تم بث الخبر على منصة Google Blogger وتجهيز رسالة الواتساب للعميل فوراً.
+        </p>
+
+        <!-- Published Info Card -->
+        <div
+          style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; text-align: right;">
+          <div
+            style="font-size: 13.5px; font-weight: 700; color: var(--accent-gold); margin-bottom: 6px; line-height: 1.4;"
+            id="pub-result-title">
+            ...
+          </div>
+          <div style="display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary);">
+            <span>👤 العميل: <strong id="pub-result-client" style="color: var(--text-primary);">...</strong></span>
+            <span>📞 الهاتف: <strong id="pub-result-phone"
+                style="font-family: var(--font-code); color: var(--text-primary);">...</strong></span>
+          </div>
+        </div>
+
+        <!-- MAIN PRIMARY BUTTON: Open Both Article & WhatsApp -->
+        <button type="button" id="btn-pub-open-both" class="btn btn-gold btn-block"
+          style="height: 52px; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; box-shadow: 0 6px 25px rgba(245, 158, 11, 0.4); border-radius: 10px; cursor: pointer;">
+          <span style="font-size: 20px;">🌟</span>
+          <span>فتح الخبر ورابط واتساب معاً</span>
+          <span
+            style="font-size: 11px; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 6px; font-weight: normal;">(في
+            نافذتين)</span>
+        </button>
+
+        <!-- Popup Blocked Friendly Fallback Alert Box -->
+        <div id="pub-popup-blocked-alert"
+          style="display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid var(--color-danger); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; text-align: right;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+            <span style="font-size: 13px; color: #F87171; font-weight: bold;">⚠️ المتصفح حجب نافذة واتساب
+              التلقائية!</span>
+            <a id="btn-pub-popup-retry-wa" href="#" target="_blank" class="btn btn-success"
+              style="font-size: 12px; padding: 6px 14px; font-weight: bold; text-decoration: none; border-radius: 6px;">👉
+              فتح محادثة واتساب الآن</a>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-muted); margin: 0; line-height: 1.5;">
+            💡 <strong>لفتح النافذتين معاً دائماً بنقرة واحدة:</strong> اضغط على أيقونة النوافذ المنبثقة (🚫) في شريط
+            عنوان المتصفح بالأعلى ثم اختر <em>«السماح دائماً للنوافذ المنبثقة من هذا الموقع»</em>.
+          </p>
+        </div>
+
+        <!-- SECONDARY BUTTONS GRID -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;">
+          <button type="button" id="btn-pub-open-post" class="btn btn-secondary"
+            style="font-size: 12.5px; padding: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📰</span>
+            <span>فتح رابط الخبر فقط</span>
+          </button>
+
+          <button type="button" id="btn-pub-open-wa" class="btn btn-secondary"
+            style="font-size: 12.5px; padding: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; color: #25D366; border-color: rgba(37,211,102,0.3);">
+            <span>💬</span>
+            <span>فتح رابط واتساب فقط</span>
+          </button>
+
+          <button type="button" id="btn-pub-copy-post" class="btn btn-secondary"
+            style="font-size: 12.5px; padding: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>🔗</span>
+            <span>نسخ رابط الخبر</span>
+          </button>
+
+          <button type="button" id="btn-pub-copy-wa" class="btn btn-secondary"
+            style="font-size: 12.5px; padding: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📋</span>
+            <span>نسخ رسالة واتساب</span>
+          </button>
+        </div>
+
+        <!-- DISMISS / CLOSE BUTTON -->
+        <button type="button" id="btn-pub-modal-close" class="btn btn-block"
+          style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 13px; padding: 10px; border-radius: 8px; cursor: pointer;">
+          ✕ إغلاق ومتابعة العمل الصحفي
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: ADD/REGISTER REPORTER -->
+  <div id="modal-add-reporter"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(15px); z-index: 2600; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 480px; max-width: 95%; background: #121826; border: 1.5px solid var(--accent-gold); border-radius: 16px; padding: 26px; box-shadow: 0 0 40px rgba(245, 158, 11, 0.25);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h3
+          style="font-size: 17px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>👤</span>
+          <span>تسجيل وتفويض مراسل جديد للبوت</span>
+        </h3>
+        <button type="button" id="btn-close-add-reporter-modal"
+          style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+      <form id="form-add-reporter">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 12.5px;">اسم الصحفي الكامل</label>
+          <input type="text" id="reporter-modal-name" class="form-input" placeholder="مثال: أحمد محمود" required
+            style="font-size: 13px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 12.5px;">معرّف تليجرام الرقمي (Telegram Chat/User ID)</label>
+          <input type="text" id="reporter-modal-id" class="form-input" placeholder="مثال: 123456789" required
+            style="font-size: 13px; font-family: var(--font-code);">
+          <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">يحصل عليه الصحفي من
+            بوت @userinfobot على تليجرام</span>
+        </div>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 12.5px;">الصفة التحريرية / القسم</label>
+          <input type="text" id="reporter-modal-role" class="form-input" value="صحفي لدى"
+            placeholder="مثال: مراسل أخبار الحوادث" style="font-size: 13px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" style="font-size: 12.5px;">مفتاح الربط (API Key) - اختياري</label>
+          <input type="text" id="reporter-modal-key" class="form-input" placeholder="اتركه فارغاً لتوليده تلقائياً"
+            style="font-size: 13px; font-family: var(--font-code);">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="btn-cancel-add-reporter" class="btn btn-secondary">إلغاء</button>
+          <button type="submit" id="btn-submit-add-reporter" class="btn btn-gold" style="font-weight: 700;">اعتماد
+            الصحفي 🔑</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT REPORTER -->
+  <div id="modal-edit-reporter"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(15px); z-index: 2600; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 480px; max-width: 95%; background: #121826; border: 1.5px solid var(--accent-gold); border-radius: 16px; padding: 26px; box-shadow: 0 0 40px rgba(245, 158, 11, 0.25);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <h3
+          style="font-size: 17px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>✏️</span>
+          <span>تعديل بيانات الصحفي ومفتاح الربط</span>
+        </h3>
+        <button type="button" id="btn-close-edit-reporter-modal"
+          style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+      <form id="form-edit-reporter">
+        <input type="hidden" id="edit-reporter-original-id">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 12.5px;">اسم الصحفي الكامل</label>
+          <input type="text" id="edit-reporter-name" class="form-input" required style="font-size: 13px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="font-size: 12.5px;">معرّف تليجرام الرقمي (Telegram ID)</label>
+          <input type="text" id="edit-reporter-id" class="form-input" required readonly
+            style="font-size: 13px; font-family: var(--font-code); opacity: 0.8; cursor: not-allowed; background: rgba(0,0,0,0.3);">
+          <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">معرف تليجرام ثابت ومرتبط بسجل النشر</span>
+        </div>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 12.5px;">الصفة التحريرية / القسم</label>
+          <input type="text" id="edit-reporter-role" class="form-input" placeholder="مثال: مراسل أخبار الحوادث" style="font-size: 13px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" style="font-size: 12.5px;">مفتاح الربط (API Key)</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="edit-reporter-key" class="form-input" placeholder="مفتاح الذكاء الاصطناعي الخاص بالصحفي"
+              style="font-size: 12px; font-family: var(--font-code); flex: 1;">
+            <button type="button" id="btn-gen-new-rep-key" class="btn btn-secondary" style="font-size: 12px; white-space: nowrap;" title="توليد مفتاح جديد">⚡ توليد</button>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="btn-cancel-edit-reporter" class="btn btn-secondary">إلغاء</button>
+          <button type="submit" id="btn-submit-edit-reporter" class="btn btn-gold" style="font-weight: 700;">حفظ التعديلات 💾</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD ACCOUNTING TRANSACTION -->
+  <div id="modal-add-accounting-transaction"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(15px); z-index: 2600; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 520px; max-width: 95%; background: #121826; border: 1.5px solid var(--accent-gold); border-radius: 18px; padding: 26px; box-shadow: 0 0 45px rgba(245, 158, 11, 0.25);">
+      <div class="modal-sheet-handle"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3
+          style="font-size: 17px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>💰</span>
+          <span>تسجيل تحصيل مالي للخبر وتوزيع الأرباح</span>
+        </h3>
+        <button type="button" id="btn-close-add-tx-modal"
+          style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <!-- Quick Auto-Fill from Unbilled Articles Picker with Search -->
+      <div class="form-group" style="margin-bottom: 14px; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label class="form-label" style="font-size: 12.5px; color: var(--accent-gold); margin-bottom: 0; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+            <span>⚡</span>
+            <span>اختر من أخبارك المنشورة حديثاً (ملء تلقائي بلمسة واحدة):</span>
+          </label>
+          <span id="tx-unbilled-count-badge" class="badge badge-gold" style="font-size: 11px;">0 متاح</span>
+        </div>
+
+        <!-- Search input with clear button -->
+        <div style="position: relative; margin-bottom: 8px;">
+          <input type="text" id="tx-unbilled-search" class="form-input"
+            placeholder="🔍 ابحث في القائمة (بالعنوان، اسم العميل، أو رقم الهاتف)..."
+            style="font-size: 12px; padding: 7px 32px 7px 10px; background: rgba(0, 0, 0, 0.45); border-color: rgba(245, 158, 11, 0.4);">
+          <button type="button" id="btn-clear-unbilled-search"
+            style="display: none; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 2px 6px;"
+            title="مسح البحث">✕</button>
+        </div>
+
+        <select id="tx-unbilled-picker" class="form-select" style="font-size: 12.5px; background: #121826;">
+          <option value="">-- اختر خبراً لملء البيانات تلقائياً أو اكتب يدوياً بالأسفل --</option>
+        </select>
+        <div id="tx-unbilled-search-hint" style="font-size: 11.5px; color: var(--text-muted); margin-top: 5px; display: none;"></div>
+      </div>
+
+      <form id="form-add-transaction">
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label" style="font-size: 12px;">عنوان الخبر الصحفي</label>
+          <input type="text" id="tx-article-title" class="form-input" placeholder="عنوان المقال المنشور" required
+            style="font-size: 13px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <label class="form-label" style="font-size: 12px;">رابط الخبر على الموقع (اختياري)</label>
+          <input type="url" id="tx-article-url" class="form-input" placeholder="https://www.tahteldoo.com/..."
+            style="font-size: 12.5px; font-family: var(--font-code);">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">اسم العميل (اختياري)</label>
+            <input type="text" id="tx-client-name" class="form-input" placeholder="اسم العميل"
+              style="font-size: 12.5px;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">رقم هاتف العميل</label>
+            <input type="text" id="tx-client-phone" class="form-input" placeholder="01xxxxxxxxx" required
+              style="font-size: 13px; font-family: var(--font-code);">
+          </div>
+        </div>
+
+        <!-- Payment Amount & Method -->
+        <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 10px; margin-bottom: 12px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">سعر الدفع المحصل (ج.م)</label>
+            <input type="number" id="tx-amount-paid" class="form-input" value="150" min="1" step="1" required
+              style="font-size: 14px; font-weight: 700; color: var(--accent-gold);">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 12px;">طريقة الدفع المعتمدة</label>
+            <select id="tx-payment-method" class="form-select" style="font-size: 12.5px;">
+              <option value="vodafone_cash">📱 فودافون كاش</option>
+              <option value="instapay">⚡ إنستاباي (InstaPay)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Live Calculation Preview Card -->
+        <div
+          style="background: rgba(0,0,0,0.5); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 11.5px; color: var(--text-muted); display: block;">حصة الجريدة:</span>
+            <strong id="tx-preview-cut" style="color: #F87171; font-size: 14px; font-family: var(--font-code);">--
+              ج.م</strong>
+          </div>
+          <div style="text-align: left;">
+            <span style="font-size: 11.5px; color: var(--text-muted); display: block;">صافي ربحك المحقق:</span>
+            <strong id="tx-preview-net" style="color: #10B981; font-size: 16px; font-family: var(--font-code);">--
+              ج.م</strong>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12px;">ملاحظات أو كود الإيصال (اختياري)</label>
+          <input type="text" id="tx-notes" class="form-input" placeholder="أي ملاحظات تخص المعاملة"
+            style="font-size: 12px;">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="btn-cancel-add-tx" class="btn btn-secondary">إلغاء</button>
+          <button type="submit" id="btn-submit-transaction" class="btn btn-gold" style="font-weight: 700;">
+            اعتماد وتسجيل التحصيل 💰
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SET CUSTOM DEDUCTION (ADMIN ONLY) -->
+  <div id="modal-set-custom-cut"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.85); backdrop-filter: blur(15px); z-index: 2600; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 420px; max-width: 95%; background: #121826; border: 1.5px solid var(--accent-gold); border-radius: 16px; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3
+          style="font-size: 16px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+          <span>⚙️</span>
+          <span>تخصيص نسبة استقطاع فردية للصحفي</span>
+        </h3>
+        <button type="button" id="btn-close-custom-cut-modal"
+          style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px;">
+        يمكنك تعيين مبلغ استقطاع استثنائي للصحفي: <strong id="custom-cut-user-name"
+          style="color: var(--accent-gold);">...</strong>
+      </p>
+      <form id="form-set-custom-cut">
+        <input type="hidden" id="custom-cut-user-id">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12px;">نسبة الاستقطاع المخصصة (ج.م)</label>
+          <input type="number" id="custom-cut-input" class="form-input"
+            placeholder="اتركه فارغاً للعودة للنسبة الافتراضية" min="0" step="1" style="font-size: 14px;">
+          <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">اترك الحقل فارغاً
+            إذا أردت استخدام النسبة الافتراضية لرتبته.</span>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="btn-cancel-custom-cut" class="btn btn-secondary">إلغاء</button>
+          <button type="submit" class="btn btn-gold">حفظ النسبة 💾</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: MANUAL CLIENT REGISTRATION (EXTERNAL CONTACT) -->
+  <div id="modal-manual-register"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(15px); z-index: 2600; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 480px; max-width: 95%; background: #121826; border: 1.5px solid var(--accent-gold); border-radius: 16px; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3
+          style="font-size: 16px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; margin: 0;">
+          <span>📱</span>
+          <span>تسجيل رقم / عميل يدوياً (تواصل خارجي)</span>
+        </h3>
+        <button type="button" id="btn-close-manual-modal" onclick="if(window.closeManualRegisterModal) window.closeManualRegisterModal(); else { document.getElementById('modal-manual-register').style.display='none'; }"
+          style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+      <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+        استخدم هذا الخيار لحجز الرقم في قاعدة البيانات المركزية عند التواصل مع العميل بطرق أخرى (واتساب، اتصال، تسويق، أو تعاقد) لمنع تكرار التواصل.
+      </p>
+      <form id="form-manual-register">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 12.5px; font-weight: 700;">📞 رقم هاتف العميل <span style="color: #EF4444;">*</span></label>
+          <input type="text" id="manual-reg-phone" class="form-input" dir="ltr"
+            placeholder="مثال: 01012345678 أو 01222222222" required style="font-family: var(--font-code); font-size: 14px;">
+          <span style="font-size: 11px; color: var(--accent-gold); margin-top: 4px; display: block;">⚡ سيتم ضبط الرقم وتوحيده تلقائياً بالصيغة القياسية (201xxxxxxxxx).</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 12.5px; font-weight: 700;">👤 اسم العميل أو الجهة (اختياري)</label>
+          <input type="text" id="manual-reg-name" class="form-input"
+            placeholder="مثال: د. شريف الحصافي / شركة النور">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 12.5px; font-weight: 700;">🎯 طريقة التواصل / سبب التسجيل</label>
+          <select id="manual-reg-method" class="form-select">
+            <option value="تواصل واتساب مباشر">💬 تواصل واتساب مباشر</option>
+            <option value="مكالمة هاتفية">📞 مكالمة هاتفية</option>
+            <option value="تسويق خارجي وميداني">📢 تسويق خارجي وميداني</option>
+            <option value="تعاقد تجاري مسبق">🤝 تعاقد تجاري مسبق</option>
+            <option value="حجز رقم مستقبلي">🔒 حجز رقم مستقبلي</option>
+            <option value="أخرى">📌 أخرى</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-size: 12.5px; font-weight: 700;">📝 ملاحظات التواصل (اختياري)</label>
+          <textarea id="manual-reg-notes" class="form-input" rows="2"
+            placeholder="تفاصيل المراسلة أو الاتفاق..." style="resize: vertical; font-size: 13px;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" id="btn-cancel-manual-modal" onclick="if(window.closeManualRegisterModal) window.closeManualRegisterModal(); else { document.getElementById('modal-manual-register').style.display='none'; }" class="btn btn-secondary">إلغاء</button>
+          <button type="submit" id="btn-save-manual-client" class="btn btn-gold" style="font-weight: 800; min-width: 140px;">
+            💾 حفظ وتسجيل الرقم
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MOBILE DRAWER OVERLAY
+       ====================================================================== -->
+  <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
+
+  <!-- ======================================================================
+       MOBILE DRAWER PANEL
+       ====================================================================== -->
+  <div class="mobile-drawer" id="mobile-drawer" dir="rtl">
+    <!-- Drawer Header: Logo + User Info -->
+    <div class="mobile-drawer-header">
+      <div class="mobile-drawer-crest">
+        <img src="/img/logo.png" alt="شعار جريدة تحت الضوء">
+      </div>
+      <div class="mobile-drawer-user-info">
+        <div class="mobile-drawer-username" id="drawer-username">جريدة تحت الضوء</div>
+        <div class="mobile-drawer-role" id="drawer-role">المنظومة السحابية v4.0</div>
+      </div>
+      <button class="mobile-drawer-close" id="btn-mobile-drawer-close" aria-label="إغلاق القائمة">✕</button>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="mobile-drawer-nav">
+      <!-- Main Sections -->
+      <div class="mobile-drawer-section-label">الأقسام الرئيسية</div>
+
+      <button class="mobile-drawer-nav-item" data-drawer-view="create">
+        <span class="drawer-nav-icon">✏️</span>
+        <span>إنشاء خبر سريع</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item" data-drawer-view="verification">
+        <span class="drawer-nav-icon">🔍</span>
+        <span>فحص العملاء والتكرار</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item" data-drawer-view="articles">
+        <span class="drawer-nav-icon">📚</span>
+        <span>أرشيف الأخبار</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item" data-drawer-view="accounting">
+        <span class="drawer-nav-icon">💰</span>
+        <span>الحسابات والأرباح</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item" data-drawer-view="settings">
+        <span class="drawer-nav-icon">⚙️</span>
+        <span>الإعدادات والكوتا</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item" data-drawer-view="logs">
+        <span class="drawer-nav-icon">📡</span>
+        <span>سجل العمليات اللحظي</span>
+      </button>
+
+      <!-- Admin Sections -->
+      <div class="mobile-drawer-divider"></div>
+      <div class="mobile-drawer-section-label admin-only" style="display:none;">إدارة المنظومة</div>
+
+      <button class="mobile-drawer-nav-item admin-only" data-drawer-view="reporters" style="display:none;">
+        <span class="drawer-nav-icon">👥</span>
+        <span>فريق المراسلين</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item admin-only" data-drawer-view="bot-control" style="display:none;">
+        <span class="drawer-nav-icon">🤖</span>
+        <span>تحكم بوت التليجرام</span>
+      </button>
+
+      <!-- Theme Switcher in Drawer (mobile only) -->
+      <div class="mobile-drawer-divider"></div>
+      <div class="mobile-drawer-section-label">مظهر التطبيق</div>
+      <div style="display: flex; gap: 8px; padding: 6px 14px;">
+        <button class="btn btn-secondary" data-theme-set="dark" style="flex:1; font-size:12px; min-height:38px; padding:6px;" onclick="document.body.setAttribute('data-theme','dark'); document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active', b.dataset.themeSet==='dark'));">🌙 داكن</button>
+        <button class="btn btn-secondary" data-theme-set="gray" style="flex:1; font-size:12px; min-height:38px; padding:6px;" onclick="document.body.setAttribute('data-theme','gray'); document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active', b.dataset.themeSet==='gray'));">🩶 رمادي</button>
+        <button class="btn btn-secondary" data-theme-set="light" style="flex:1; font-size:12px; min-height:38px; padding:6px;" onclick="document.body.setAttribute('data-theme','light'); document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active', b.dataset.themeSet==='light'));">☀️ فاتح</button>
+      </div>
+    </nav>
+
+    <!-- Drawer Footer: Server Status + Logout -->
+    <div class="mobile-drawer-footer">
+      <div class="mobile-drawer-status">
+        <span style="display:flex; align-items:center; gap:6px;">
+          <span class="status-dot"></span>
+          السيرفر المركزي: متصل
+        </span>
+        <span style="color: var(--accent-gold); font-weight: 700;" id="drawer-server-port">8000</span>
+      </div>
+      <button class="mobile-drawer-footer-btn" id="btn-mobile-drawer-logout">
+        <span>🚪</span>
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       MOBILE BOTTOM NAVIGATION BAR
+       ====================================================================== -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <div class="mobile-bottom-nav-inner">
+      <button class="mobile-nav-item active" data-mobile-view="create" id="mnav-create">
+        <div class="mobile-nav-icon">✏️</div>
+        <span class="mobile-nav-label">إنشاء</span>
+      </button>
+      <button class="mobile-nav-item" data-mobile-view="verification" id="mnav-verification">
+        <div class="mobile-nav-icon">🔍</div>
+        <span class="mobile-nav-label">فحص</span>
+      </button>
+      <button class="mobile-nav-item" data-mobile-view="articles" id="mnav-articles">
+        <div class="mobile-nav-icon">📚</div>
+        <span class="mobile-nav-label">أرشيف</span>
+      </button>
+      <button class="mobile-nav-item" data-mobile-view="accounting" id="mnav-accounting">
+        <div class="mobile-nav-icon">💰</div>
+        <span class="mobile-nav-label">حسابات</span>
+      </button>
+      <button class="mobile-nav-item" data-mobile-view="__more" id="mnav-more">
+        <div class="mobile-nav-icon">⋯</div>
+        <span class="mobile-nav-label">المزيد</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ======================================================================
+       FLOATING ACTION BUTTON (FAB) — إنشاء خبر سريع
+       ====================================================================== -->
+  <button class="mobile-fab" id="mobile-fab" title="إنشاء خبر جديد" aria-label="إنشاء خبر جديد">🚀</button>
+
+  <!-- ======================================================================
+       MODAL SHEET HANDLES — inserted at top of each modal inner div
+       ====================================================================== -->
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script src="/js/app.js"></script>
+</body>
+
+</html>
