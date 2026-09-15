@@ -1,20 +1,44 @@
 import os
 import sys
+import shutil
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Base Directory
+# Base Directory (Application bundle directory)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load .env file
-ENV_FILE = BASE_DIR / ".env"
+# User Writable Data Directory (AppData/Local/TahtElDooPublisher)
+if sys.platform == "win32":
+    APP_DATA_DIR = Path(os.getenv("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "TahtElDooPublisher"
+else:
+    APP_DATA_DIR = Path.home() / ".config" / "TahtElDooPublisher"
+
+APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# User Writable .env File
+ENV_FILE = APP_DATA_DIR / ".env"
+
+# Copy default .env from bundle if user .env doesn't exist yet
+if not ENV_FILE.exists():
+    bundle_env = BASE_DIR / ".env"
+    if bundle_env.exists():
+        try:
+            shutil.copy2(bundle_env, ENV_FILE)
+        except Exception:
+            pass
+
 if ENV_FILE.exists():
     load_dotenv(ENV_FILE, override=True)
+else:
+    bundle_env = BASE_DIR / ".env"
+    if bundle_env.exists():
+        load_dotenv(bundle_env, override=True)
 
 class Config:
     """Application Configuration Manager"""
     BASE_DIR = BASE_DIR
-    STORAGE_DIR = BASE_DIR / "storage"
+    APP_DATA_DIR = APP_DATA_DIR
+    STORAGE_DIR = APP_DATA_DIR / "storage"
     DB_PATH = STORAGE_DIR / "app.db"
     LOGS_DIR = STORAGE_DIR / "logs"
 
@@ -22,39 +46,23 @@ class Config:
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Z.AI / GLM Settings
+    # Z.AI / GLM Settings (Sole LLM Provider)
     ZAI_API_KEY = os.getenv("ZAI_API_KEY", "")
     ZAI_API_KEY_2 = os.getenv("ZAI_API_KEY_2", "")
     ZAI_API_KEY_3 = os.getenv("ZAI_API_KEY_3", "")
+    TELEGRAM_ZAI_API_KEY = os.getenv("TELEGRAM_ZAI_API_KEY", "")
     ZAI_BASE_URL = os.getenv("ZAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/")
     ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.7-flash")
 
-    # Groq AI Settings
-    GROQ_API_KEY = os.getenv("groq-api-kay") or os.getenv("GROQ_API_KEY", "")
-    GROQ_API_KEY_2 = os.getenv("GROQ_API_KEY_2", "")
-    GROQ_MODEL = os.getenv("GROQ_MODEL") or os.getenv("Model", "openai/gpt-oss-120b")
-
-    # ZenMux / OpenAI Compatible AI Settings
-    ZENMUX_API_KEY = os.getenv("ZENMUX_API_KEY", "")
-    ZENMUX_BASE_URL = os.getenv("ZENMUX_BASE_URL", "https://zenmux.ai/api/v1")
-    ZENMUX_MODEL = os.getenv("ZENMUX_MODEL", "")
-
-    # Google Gemini AI Settings
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
-
-    # OpenRouter AI Settings
-    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-    OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
-    OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+    # Telegram Bot Settings
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8834102717:AAGCflNVXtYccq1oG0JqYQGW2bv4WBkwhAM")
 
     # Blogger Settings
     BLOGGER_BLOG_ID = os.getenv("BLOGGER_BLOG_ID", "")
     BLOGGER_BLOG_NAME = os.getenv("BLOGGER_BLOG_NAME", "")
     GOOGLE_USER_EMAIL = os.getenv("GOOGLE_USER_EMAIL", "")
-    CREDENTIALS_FILE = BASE_DIR / "credentials.json"
-    TOKEN_FILE = BASE_DIR / "token.pickle"
+    CREDENTIALS_FILE = APP_DATA_DIR / "credentials.json" if (APP_DATA_DIR / "credentials.json").exists() else BASE_DIR / "credentials.json"
+    TOKEN_FILE = APP_DATA_DIR / "token.pickle"
 
     # Image Hosting (ImgBB)
     IMGBB_API_KEY = os.getenv("ImgBB API") or os.getenv("IMGBB_API_KEY", "")
@@ -64,6 +72,7 @@ class Config:
     WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN") or os.getenv("WHATSAPP_API_URL", "")
     WHATSAPP_SESSION_ID = os.getenv("WHATSAPP_SESSION_ID", "user_396_8be6e549-4034-4357-ba17-4ddd5c28d507")
     WHATSAPP_DELAY_SECONDS = int(os.getenv("WHATSAPP_DELAY_SECONDS", "5"))
+    REMOVE_WHATSAPP_EMOJIS = os.getenv("REMOVE_WHATSAPP_EMOJIS", "true").lower() in ("true", "1", "yes")
 
     # Theme Setting (dark / light)
     APP_THEME = os.getenv("APP_THEME", "dark")
@@ -77,6 +86,10 @@ class Config:
     EDITOR_NAME = os.getenv("EDITOR_NAME", "محمد شلبي")
     EDITOR_ROLE = os.getenv("EDITOR_ROLE", "رئيس تحرير")
     EDITOR_PHONE = os.getenv("EDITOR_PHONE", "")
+
+    # Central Hub Server (Local / Network Hub for Telegram & Desktop)
+    CENTRAL_HUB_URL = os.getenv("CENTRAL_HUB_URL", "http://127.0.0.1:8000")
+    CENTRAL_HUB_PORT = int(os.getenv("CENTRAL_HUB_PORT", "8000"))
 
     @classmethod
     def update_env(cls, key: str, value: str):

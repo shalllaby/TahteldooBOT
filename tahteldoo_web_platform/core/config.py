@@ -53,7 +53,7 @@ class Config:
     WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN") or os.getenv("WHATSAPP_API_URL", "")
     WHATSAPP_SESSION_ID = os.getenv("WHATSAPP_SESSION_ID", "user_396_8be6e549-4034-4357-ba17-4ddd5c28d507")
     WHATSAPP_DELAY_SECONDS = int(os.getenv("WHATSAPP_DELAY_SECONDS", "5"))
-    REMOVE_WHATSAPP_EMOJIS = os.getenv("REMOVE_WHATSAPP_EMOJIS", "false").lower() in ("true", "1", "yes")
+    REMOVE_WHATSAPP_EMOJIS = os.getenv("REMOVE_WHATSAPP_EMOJIS", "true").lower() in ("true", "1", "yes")
 
     # Theme Setting (dark / light)
     APP_THEME = os.getenv("APP_THEME", "dark")
