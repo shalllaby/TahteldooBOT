@@ -138,6 +138,34 @@ class AIService:
 
         self.zai_client = self.zai_clients[0] if self.zai_clients else None
 
+        # Groq Cloud Integration (Automated High-Performance Fallback 1)
+        self.groq_key = getattr(Config, "GROQ_API_KEY", "") or os.getenv("GROQ_API_KEY", "")
+        self.groq_base_url = getattr(Config, "GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+        self.groq_model = getattr(Config, "GROQ_MODEL", "openai/gpt-oss-120b")
+        self.groq_client = None
+        if OpenAI and self.groq_key:
+            try:
+                self.groq_client = OpenAI(
+                    api_key=self.groq_key.strip(),
+                    base_url=self.groq_base_url,
+                    default_headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                )
+                logger.info(f"تم تفعيل محرك الطوارئ الأول Groq Cloud ({self.groq_model}) بنجاح ⚡")
+            except Exception as groq_err:
+                logger.warning(f"تعذر تهيئة محرك Groq Cloud: {groq_err}")
+
+        # Google Gemini Integration (Automated High-Performance Fallback 2)
+        self.gemini_key = getattr(Config, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
+        self.gemini_base_url = getattr(Config, "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+        self.gemini_model = getattr(Config, "GEMINI_MODEL", "gemini-flash-latest")
+        self.gemini_client = None
+        if OpenAI and self.gemini_key:
+            try:
+                self.gemini_client = OpenAI(api_key=self.gemini_key.strip(), base_url=self.gemini_base_url)
+                logger.info("تم تفعيل محرك الطوارئ الثاني Google Gemini بنجاح 🛡️")
+            except Exception as gem_err:
+                logger.warning(f"تعذر تهيئة محرك Google Gemini: {gem_err}")
+
         # Thread pool for asynchronous / parallel execution
         self._executor = ThreadPoolExecutor(max_workers=4)
 
@@ -164,7 +192,10 @@ class AIService:
         temperature: float = 0.2,
         max_tokens: int = 3500,
         validate_json: bool = True,
-        override_client: Any = None
+        override_client: Any = None,
+        reporter_name: str = "",
+        reporter_id: str = "",
+        article_title: str = ""
     ) -> Tuple[Any, str, str, Dict[str, Any]]:
         """
         Executes a chat completion request with intelligent model fallback
@@ -300,7 +331,239 @@ class AIService:
                             )
                             break
 
-        raise ValueError(f"فشلت جميع محاولات الصياغة عبر Z.AI (GLM). الخطأ الأخير: {last_exception}")
+        # ======================================================
+        # 🛡️ MULTI-TIER RESILIENT FALLBACK (GROQ 120B ➔ GEMINI)
+        # ======================================================
+        raw_err_str = str(last_exception) if last_exception else "فشل استجابة GLM"
+
+        # Parse and categorize the trigger reason accurately
+        if "rate_limit" in raw_err_str.lower() or "429" in raw_err_str or "tokens per minute" in raw_err_str.lower() or "1302" in raw_err_str or "速率限制" in raw_err_str:
+            trigger_reason = "تجاوز معدل الطلبات المسموح (GLM Rate Limit 429)"
+        elif "timeout" in raw_err_str.lower() or "timed out" in raw_err_str.lower():
+            trigger_reason = "انتهاء مهلة الاتصال بسيرفر GLM (Connection Timeout)"
+        elif "1113" in raw_err_str or "余额不足" in raw_err_str or "无可用资源包" in raw_err_str or "请充值" in raw_err_str:
+            trigger_reason = "نفاد رصيد باقة GLM (Code 1113)"
+        elif "json" in raw_err_str.lower() or "parse" in raw_err_str.lower():
+            trigger_reason = "فشل توليد JSON صالح من GLM"
+        elif "500" in raw_err_str or "502" in raw_err_str or "503" in raw_err_str or "server error" in raw_err_str.lower():
+            trigger_reason = "سيرفر GLM غير متاح مؤقتاً (Server Error 5xx)"
+        else:
+            clean_err = re.sub(r'[\r\n]+', ' ', raw_err_str).strip()
+            trigger_reason = f"تعثر GLM: {clean_err[:120]}"
+
+        # ------------------------------------------------------
+        # ⚡ TIER 2: PRIMARY FALLBACK - GROQ CLOUD (openai/gpt-oss-120b)
+        # ------------------------------------------------------
+        groq_err = None
+        if getattr(self, "groq_client", None):
+            logger.warning(
+                f"⚠️ تفعيل نظام الطوارئ الأول: تعثر محرك GLM ({trigger_reason}). "
+                f"جاري التحويل التلقائي الفوري إلى Groq Cloud ({self.groq_model})..."
+            )
+
+            groq_start = time.time()
+            groq_candidates = [
+                self.groq_model,
+                "openai/gpt-oss-120b",
+                "qwen/qwen3.8-27b",
+                "openai/gpt-oss-20b"
+            ]
+            seen_gr = set()
+            groq_models = [m for m in groq_candidates if m and not (m in seen_gr or seen_gr.add(m))]
+            groq_res = None
+            groq_parsed = None
+            used_gr_model = groq_models[0]
+
+            for gr_model in groq_models:
+                used_gr_model = gr_model
+                try:
+                    req_kwargs = {
+                        "messages": messages,
+                        "model": gr_model,
+                        "temperature": temperature,
+                        "max_tokens": 8192
+                    }
+                    if validate_json:
+                        req_kwargs["response_format"] = {"type": "json_object"}
+
+                    groq_res = self.groq_client.chat.completions.create(**req_kwargs)
+                    gr_text = ""
+                    if groq_res and hasattr(groq_res, "choices") and groq_res.choices:
+                        gr_text = (getattr(groq_res.choices[0].message, "content", "") or "").strip()
+
+                    if validate_json:
+                        groq_parsed = self.parse_json_response(gr_text)
+                        if isinstance(groq_parsed, dict):
+                            break
+                    else:
+                        break
+                except Exception as ge:
+                    groq_err = ge
+                    logger.warning(f"محاولة النموذج {gr_model} عبر Groq تعثرت: {ge}")
+                    continue
+
+            groq_latency = round(time.time() - groq_start, 2)
+
+            if groq_res and (groq_parsed or not validate_json):
+                p_tok = getattr(groq_res.usage, "prompt_tokens", 0) if hasattr(groq_res, "usage") and groq_res.usage else 0
+                c_tok = getattr(groq_res.usage, "completion_tokens", 0) if hasattr(groq_res, "usage") and groq_res.usage else 0
+                tot_tok = getattr(groq_res.usage, "total_tokens", 0) if hasattr(groq_res, "usage") and groq_res.usage else (p_tok + c_tok)
+
+                final_title = ""
+                if isinstance(groq_parsed, dict):
+                    final_title = groq_parsed.get("title") or ""
+                if not final_title:
+                    final_title = article_title or "خبر صحفي"
+
+                try:
+                    from database.db import db
+                    db.log_gemini_fallback(
+                        article_title=final_title,
+                        reporter_name=reporter_name or "محرر الجريدة",
+                        reporter_id=str(reporter_id or ""),
+                        trigger_reason=trigger_reason,
+                        glm_model=target_model or self.model,
+                        gemini_model=f"Groq ({used_gr_model})",
+                        latency_seconds=groq_latency,
+                        prompt_tokens=p_tok,
+                        completion_tokens=c_tok,
+                        total_tokens=tot_tok,
+                        status="SUCCESS",
+                        error_details=""
+                    )
+                    logger.info(
+                        f"✅ [GROQ FALLBACK SUCCESS] تم إنقاذ المقال بنجاح عبر Groq Cloud ({used_gr_model}) "
+                        f"في {groq_latency} ثانية ({tot_tok} توكن)."
+                    )
+                except Exception as log_err:
+                    logger.warning(f"تعذر تسجيل عملية Groq Fallback في قاعدة البيانات: {log_err}")
+
+                return groq_res, "groq", used_gr_model, (groq_parsed if validate_json else {})
+            else:
+                logger.warning(f"تعذر إنقاذ المقال عبر Groq Cloud: {groq_err}. جاري الانتقال للبديل الثاني Google Gemini...")
+
+        # ------------------------------------------------------
+        # 🛡️ TIER 3: SECONDARY FALLBACK - GOOGLE GEMINI
+        # ------------------------------------------------------
+        if getattr(self, "gemini_client", None):
+            logger.warning(
+                f"⚠️ تفعيل نظام الطوارئ الثاني: جاري التحويل التلقائي الفوري إلى Google Gemini ({self.gemini_model})..."
+            )
+
+            gemini_start = time.time()
+            gemini_candidates = [
+                "gemini-flash-latest",
+                "gemini-flash-lite-latest",
+                "gemini-3.5-flash",
+                "gemini-3.8-flash",
+                "gemini-3.1-flash-lite",
+                self.gemini_model
+            ]
+            seen_m = set()
+            gemini_models = [m for m in gemini_candidates if m and not (m in seen_m or seen_m.add(m))]
+            gemini_res = None
+            gemini_parsed = None
+            gemini_err = None
+            used_g_model = gemini_models[0]
+
+            for g_model in gemini_models:
+                used_g_model = g_model
+                try:
+                    req_kwargs = {
+                        "messages": messages,
+                        "model": g_model,
+                        "temperature": temperature,
+                        "max_tokens": 8192
+                    }
+                    if validate_json:
+                        req_kwargs["response_format"] = {"type": "json_object"}
+
+                    gemini_res = self.gemini_client.chat.completions.create(**req_kwargs)
+                    g_text = ""
+                    if gemini_res and hasattr(gemini_res, "choices") and gemini_res.choices:
+                        g_text = (getattr(gemini_res.choices[0].message, "content", "") or "").strip()
+
+                    if validate_json:
+                        gemini_parsed = self.parse_json_response(g_text)
+                        if isinstance(gemini_parsed, dict):
+                            break
+                    else:
+                        break
+                except Exception as ge:
+                    gemini_err = ge
+                    logger.warning(f"محاولة النموذج {g_model} عبر Gemini تعثرت: {ge}")
+                    continue
+
+            gemini_latency = round(time.time() - gemini_start, 2)
+
+            if gemini_res and (gemini_parsed or not validate_json):
+                p_tok = getattr(gemini_res.usage, "prompt_tokens", 0) if hasattr(gemini_res, "usage") and gemini_res.usage else 0
+                c_tok = getattr(gemini_res.usage, "completion_tokens", 0) if hasattr(gemini_res, "usage") and gemini_res.usage else 0
+                tot_tok = getattr(gemini_res.usage, "total_tokens", 0) if hasattr(gemini_res, "usage") and gemini_res.usage else (p_tok + c_tok)
+
+                final_title = ""
+                if isinstance(gemini_parsed, dict):
+                    final_title = gemini_parsed.get("title") or ""
+                if not final_title:
+                    final_title = article_title or "خبر صحفي"
+
+                try:
+                    from database.db import db
+                    db.log_gemini_fallback(
+                        article_title=final_title,
+                        reporter_name=reporter_name or "محرر الجريدة",
+                        reporter_id=str(reporter_id or ""),
+                        trigger_reason=trigger_reason,
+                        glm_model=target_model or self.model,
+                        gemini_model=f"Gemini ({used_g_model})",
+                        latency_seconds=gemini_latency,
+                        prompt_tokens=p_tok,
+                        completion_tokens=c_tok,
+                        total_tokens=tot_tok,
+                        status="SUCCESS",
+                        error_details=""
+                    )
+                    logger.info(
+                        f"✅ [GEMINI FALLBACK SUCCESS] تم إنقاذ المقال بنجاح عبر Google Gemini ({used_g_model}) "
+                        f"في {gemini_latency} ثانية ({tot_tok} توكن)."
+                    )
+                except Exception as log_err:
+                    logger.warning(f"تعذر تسجيل عملية Gemini Fallback في قاعدة البيانات: {log_err}")
+
+                return gemini_res, "gemini", used_g_model, (gemini_parsed if validate_json else {})
+            else:
+                # Log failed fallback attempt to DB
+                try:
+                    from database.db import db
+                    db.log_gemini_fallback(
+                        article_title=article_title or "خبر صحفي",
+                        reporter_name=reporter_name or "محرر الجريدة",
+                        reporter_id=str(reporter_id or ""),
+                        trigger_reason=trigger_reason,
+                        glm_model=target_model or self.model,
+                        gemini_model=f"Gemini ({used_g_model})",
+                        latency_seconds=gemini_latency,
+                        prompt_tokens=0,
+                        completion_tokens=0,
+                        total_tokens=0,
+                        status="FAILED",
+                        error_details=str(gemini_err or "Unknown Gemini Error")[:300]
+                    )
+                except Exception:
+                    pass
+
+        last_exc_str = str(last_exception) if last_exception else ""
+        if (
+            "1113" in last_exc_str
+            or "余额不足" in last_exc_str
+            or "无可用资源包" in last_exc_str
+            or "请充值" in last_exc_str
+            or "1302" in last_exc_str
+            or "速率限制" in last_exc_str
+        ):
+            raise ValueError("حاول مرة أخرى.. يوجد ضغط حالياً ⏳")
+
+        raise ValueError(f"فشلت جميع محاولات الصياغة عبر Z.AI (GLM) والبدائل Groq و Gemini. الخطأ الأخير: {last_exception}")
 
     # ==========================================================
     # LOAD EDITORIAL JSON
@@ -549,7 +812,9 @@ class AIService:
         raw_source: str = "",
         client_name: str = "",
         client_phone: str = "",
-        api_key: Optional[str] = None
+        api_key: Optional[str] = None,
+        reporter_name: str = "",
+        reporter_id: str = ""
     ) -> dict:
 
         # ------------------------------------------------------
@@ -972,31 +1237,26 @@ EDITORIAL REFERENCES:
 {editorial_reference}
 
 ============================================================
-INTRODUCTION RULE
+INTRODUCTION RULE (الديباجة الافتتاحية الثابتة والإلزامية)
 ============================================================
 
-The article must begin with a professional editorial lead.
+The article MUST begin with the official signature editorial lead of the newspaper.
 
-The lead must naturally include:
+The lead paragraph (lead_paragraph) MUST ALWAYS start strictly with this official signature formula:
 
-"في إطار اهتمام **جريدة تحت الضوء الإخبارية** بتسليط الضوء على..."
+"في إطار اهتمام **جريدة تحت الضوء الإخبارية** بتسليط الضوء على [طبيعة المجال أو التخصص أو الكفاءات أو الكيانات]، نسلط الضوء على [اسم الشخصية أو الكيان كاملاً مع اللقب المهني]..."
 
-Then adapt the rest of the sentence according to the subject.
+Then seamlessly continue the paragraph to explain the subject's significance, background, services, and core offering.
 
-Examples of suitable directions:
+Examples of contextual adaptations for the field:
+- الكفاءات الطبية والحلول التجميلية والعلاجية المتطورة
+- الكفاءات التعليمية والمناهج والمحتوى التدريبي المبتكر
+- الشركات المتخصصة والحلول الرقمية والتسويقية
+- المنصات التقنية والمبادرات التدريبية الرائدة
+- الخبرات والاستشارات المهنية والقانونية المتخصصة
+- المشروعات المبتكرة والخدمات المتميزة
 
-- الكفاءات التعليمية
-- الشركات المتخصصة
-- المنصات الرقمية
-- المبادرات التدريبية
-- المشروعات المتخصصة
-- الخبرات المهنية
-- الحلول والخدمات
-- الكيانات الإبداعية
-
-Do NOT use the same exact sentence mechanically every time.
-
-The introduction should feel customized to the subject.
+The rest of the opening paragraph must clearly showcase who the subject is and what makes their offering unique.
 
 ============================================================
 NON-REPETITION MANDATE (مبدأ عدم التكرار الصارم — منع الحشو والدوران اللفظي)
@@ -1045,11 +1305,13 @@ ARTICLE STRUCTURE & HEADINGS
 ============================================================
 
 The article MUST contain:
-1. A strong journalistic title (Google SERP optimized: "[Subject Name]..[News Hook with Keyword]").
-2. One compelling lead paragraph (answers core Ws, introduces **جريدة تحت الضوء الإخبارية**).
+1. A strong journalistic title (Google SERP optimized: "[Subject Name]..[News Hook with Keyword]"). Strictly use '..' separator, NEVER ':'.
+2. One compelling, authoritative lead paragraph:
+   - MANDATORY SIGNATURE OPENING: The lead paragraph MUST ALWAYS start with the newspaper's official signature formula: "في إطار اهتمام **جريدة تحت الضوء الإخبارية** بتسليط الضوء على [طبيعة المجال أو التخصص أو الكفاءات أو المشروعات]، نسلط الضوء على [اسم الشخصية أو الكيان كاملاً مع اللقب المهني]..."
+   - Then immediately answer the core journalistic facts (Who, What, Why, How) highlighting their expertise, distinguishing features, and value.
 3. 4 to 6 rich, information-dense editorial sections (adapted dynamically to source depth).
 4. A distinct, non-repetitive closing section.
-5. A contact section only if phone/contact data exists.
+5. A mandatory professional contact & closing section when phone or communication details exist.
 
 Subheadings must be:
 - Descriptive, journalistic, and informative (e.g. "تدريب عملي يركز على التطبيق المباشر", "رؤية تجمع بين التخصص وسوق العمل").
@@ -1144,26 +1406,40 @@ The official name is:
 جريدة تحت الضوء الإخبارية
 
 ============================================================
-CONTACT SECTION
+CONTACT & CLOSING SECTION (خاتمة المقال وقسم التواصل المباشر — قاعدة إلزامية)
 ============================================================
 
-If a phone or WhatsApp number exists, include a final section:
+CRITICAL MANDATE:
+Raw messages and source notes almost always contain a phone number or WhatsApp contact for the person, doctor, teacher, expert, company, or service provider.
+You MUST thoroughly inspect the source notes to extract every phone number.
 
-"للتواصل والحجز"
+If ANY phone number or contact method is found in the source notes or known client data:
 
-or
+1. MANDATORY FINAL SECTION IN "sections":
+   The VERY LAST section in the "sections" array MUST be dedicated to contacting the person or entity.
+   NEVER omit this section if a phone number or contact info exists in the input!
 
-"للتواصل واستفسار"
+2. HIGHLY PROFESSIONAL & CONTEXTUAL SUBHEADING:
+   The subheading of this contact section must be tailored elegantly to the profession or organization type (strictly free of trailing punctuation like colons or periods):
+   - For Medical / Doctors / Clinics: "طرق التواصل وحجز الاستشارات الطبية" or "للتواصل وحجز المواعيد"
+   - For Legal / Lawyers / Counselors: "قنوات التواصل المباشر وطلب الاستشارات القانونية" or "للتواصل مع المستشار وحجز المواعيد"
+   - For Educational / Teachers / Academies / Courses: "للتواصل والاستعلام عن البرامج التعليمية" or "طرق التسجيل وحجز المقاعد"
+   - For Corporate / Companies / Services / Agencies: "بيانات التواصل وطلب الخدمات والتعاقد" or "خدمة العملاء وقنوات الاتصال المباشر"
+   - For Real Estate / Engineering / Contracting: "للتواصل والاستفسار عن المشروعات والخدمات"
+   - For General Profiles / Experts / Personalities: "قنوات التواصل المباشر والاستفسار"
 
-Use the appropriate wording according to the subject.
+3. ELEGANT & HIGH-CONVERTING CLOSING PARAGRAPH (الصياغة الصحفية الراقية لقسم التواصل):
+   Craft a dignified, highly articulate Egyptian newsroom closing paragraph that:
+   - Expresses professional courtesy and welcomes reader/client inquiries with honorific respect for the subject (e.g. **الدكتور فلان** / **الأستاذ فلان** / **المهندس فلان** / **المستشار فلان** / **شركة كذا**).
+   - Explicitly directs interested individuals, clients, students, or patients to reach out directly via phone call or WhatsApp.
+   - Prominently embeds the phone number using Markdown bold markers: e.g. **010XXXXXXXX** or **+2010XXXXXXXX**.
+   - If multiple phone numbers exist in the source notes, list them clearly (e.g. "عبر الاتصال الهاتفي أو تطبيق «واتساب» على الرقم المباشر: **010XXXXXXXX** أو الرقم البديل: **011XXXXXXXX**").
+   - Mentions the physical address, clinic branch, or office location ONLY if explicitly stated in the source notes (never invent addresses!).
+   - Concludes with a warm, prestigious journalistic closing line (e.g. ترحيباً بكافة الاستفسارات وتقديم أعلى مستويات الرعاية والخدمات المهنية المتخصصة).
 
-Do not invent opening hours.
-
-Do not invent booking procedures.
-
-Do not invent social links.
-
-Only use available information.
+4. NEVER INVENT CONTACT DETAILS:
+   - Do NOT invent phone numbers if none exist in the raw notes.
+   - If a phone number is provided, ALWAYS include it in the text of the closing section and also output it in the "client_phone" field in the JSON.
 
 ============================================================
 CLIENT PHONE SELECTION RULES (STRICT)
@@ -1185,23 +1461,21 @@ GOOGLE SEO 2026 STANDARDS & SEARCH ARCHITECTURE (STRICT)
    - "lsi_keywords": Generate 3 to 5 semantically related keywords (LSI) that support the primary keyword and will be naturally woven into subheadings and paragraphs.
 
 2. TITLE RULES — GOOGLE SERP OPTIMIZATION (STRICT REQUIREMENT):
-   - MANDATORY NAME & KEYWORD INCLUSION (إجبارية ذكر اسم الشخص أو الكيان في بداية العنوان):
-     The headline (`title`) MUST start with or prominently contain the name of the person or entity (e.g., `client_name`) extracted from raw data, followed by a journalistic hook with the focus keyword.
-   - SEPARATOR RULE (قاعدة الفاصل الصحفي المعتمد):
-     استخدم دائماً نقطتين متتاليتين ".." كفاصل مباشر بين اسم الشخص/الكيان والعنوان الصحفي الجاذب دون مسافات تفصل النقطتين (أو كما في المثال: اسم الشخص..فكرة الخبر).
-     ممنوع استخدام النقطتين الرأسيتين ":" بعد اسم الشخص أو في العنوان إطلاقاً.
-   - EXACT STRUCTURE:
-     `"[اسم الشخص أو الكيان]..[فكرة صحفية جاذبة تتضمن الكلمة المفتاحية والقيمة المضافة]"`
-   - LENGTH:
-     Strictly between 45 and 60 characters for complete SERP display without truncation on mobile and desktop Google Search.
-   - EXAMPLES:
-     - `أحمد حجاج..قانون الإجراءات الجنائية الجديد يغير موازين العدالة`
-     - `أ/ شريف الحصافي..منهجية مبتكرة لتعليم الفلسفة للثانوية العامة`
-     - `د. أحمد طلبة..استراتيجيات حديثة لتطوير الرعاية الصحية في مصر`
-     - `أكاديمية الفكر الرقمي..حلول تدريبية لتأهيل الكوادر الإعلامية`
-     - `Dr. Mark Johnson..Launching Advanced AI Coding Programs in Cairo`
-   - FALLBACK ONLY IF NO NAME EXISTS:
-     If and only if there is absolutely no person name or brand in the raw data, construct an intent-driven topic headline.
+   - GOLDEN SEO HEADLINE FORMULA (معادلة العنوان الصحفي المتصدر في جوجل):
+     The headline (`title`) MUST be punchy, highly readable, and STRICTLY between 45 and 60 characters (ideal sweet spot: 50-58 chars) to ensure 100% full visibility on Google mobile & desktop search results without ANY truncation (...).
+   - SIGNATURE SEPARATOR (الفاصل المعتمد):
+     استخدم دائماً نقطتين متتاليتين ".." كفاصل مميز للجريدة دون مسافات حول النقطتين (مثل: الاسم..الفكرة).
+   - DYNAMIC SEO STRUCTURE (ترتيب الكلمات المفتاحية والكيان):
+     `"[الكيان أو الطبيب أو الكلمة المفتاحية]..[فكرة الخبر الجاذبة والقيمة المضافة]"`
+   - FORBIDDEN FILLER CLICHÉS (منع الذيول الإنشائية المستهلكة):
+     ممنوع نهائياً إنهاء العناوين بعبارات مكررة مثل "خدمات وحلول متكاملة" أو "منهجية متكاملة في".
+   - EXAMPLES (48-58 chars — 100% SERP Perfect):
+     - `دورة صيانة المحمول بالفيوم..أكاديمية عبدالرحمن قاسم` (50 chars)
+     - `استشاري علاج الألم بشرم الشيخ..د. أسامة جاويش` (45 chars)
+     - `نظام AC7 ERP..حلول ذكية لإدارة المصانع وأتمتة الإنتاج` (53 chars)
+     - `د. أميمة رشاد..خطة علمية في التغذية العلاجية وإدارة الوزن` (56 chars)
+     - `تكية اللغات..دورات متخصصة في اللغة التركية والترجمة` (49 chars)
+     - `شريف الحصافي..منهجية مبتكرة لتدريس الفلسفة للثانوية العامة` (56 chars)
 
 3. META DESCRIPTION (CTR OPTIMIZATION):
    - "meta_description": Strictly 135 to 155 characters.
@@ -1320,7 +1594,7 @@ Silently verify the following points in your memory before outputting the raw JS
 - Facts are preserved. No unsupported major facts were invented.
 - Exactly one Arabic label exists from the allowed list.
 - Slug is lowercase English and ends with .html.
-- Contact details are included only when available.
+- When phone/contact details exist in the source notes, the final section MUST contain the bolded phone number and an elegant call-to-action.
 - JSON is valid.
 
 CRITICAL FINAL REMINDER:
@@ -1386,7 +1660,10 @@ Return JSON only.
             temperature=0.2,
             max_tokens=3500,
             validate_json=True,
-            override_client=active_client
+            override_client=active_client,
+            reporter_name=reporter_name,
+            reporter_id=str(reporter_id or ""),
+            article_title=actual_name
         )
 
         # ======================================================
@@ -1442,13 +1719,14 @@ Return JSON only.
         ] = client_name
 
         # ======================================================
-        # MANDATORY TITLE SAFEGUARD (Subject Name & '..' Separator)
+        # MANDATORY TITLE SAFEGUARD (Clean ': ' Separator & SERP Length 45-60)
         # ======================================================
         title = str(parsed_data.get("title", "")).strip()
-        # Convert colon or dash separators after client name to '..'
-        title = re.sub(r"\s*:\s*", "..", title)
+        # Clean double dots into professional ': ' separator
         title = re.sub(r"\s*\.{2,}\s*", "..", title)
-        title = re.sub(r"\s+-\s+", "..", title)
+        title = re.sub(r"\s*:\s*", "..", title)
+        title = re.sub(r"[:\.\s]*(خدمات وحلول متكاملة|حلول وخدمات متكاملة)\s*$", "", title).strip()
+        title = re.sub(r"\.{2,}$", "", title).strip()
 
         if client_name and client_name.strip() and client_name not in ["خبر صحفي", "عميل تليجرام", ""]:
             clean_name_word = re.sub(r"^(أ/|أ\.|د/|د\.|م/|م\.|ك/|ك\.|أستاذ/|دكتور/|مهندس/|كابتن/)\s*", "", client_name).strip()
@@ -1464,6 +1742,13 @@ Return JSON only.
         elif ".." in title:
             parts = title.split("..", 1)
             title = f"{parts[0].strip()}..{parts[1].strip()}"
+
+        # Intelligent SERP Truncation Guard: Keep between 45 and 62 chars
+        if len(title) > 62:
+            trimmed = title[:60].rsplit(' ', 1)[0].rstrip(':, -')
+            if len(trimmed) >= 42:
+                title = trimmed
+
         parsed_data["title"] = title
 
         # ======================================================
@@ -2600,6 +2885,76 @@ Do not invent facts."""
         ] = cleaned_sections
 
         # ------------------------------------------------------
+        # Guaranteed Contact Section with Phone (Safety Fallback)
+        # ------------------------------------------------------
+        raw_client_phone = str(parsed_data.get("client_phone", "")).strip()
+        current_name = str(parsed_data.get("client_name", "")).strip()
+        detected_entity = str(parsed_data.get("entity_type", "male")).strip()
+
+        if raw_client_phone:
+            phone_digits = "".join(filter(str.isdigit, raw_client_phone))
+            core_phone = phone_digits[-9:] if len(phone_digits) >= 9 else phone_digits
+            
+            has_phone_in_text = False
+            has_contact_sec = False
+            
+            for s_idx, sec in enumerate(cleaned_sections):
+                s_sub = sec.get("subheading", "")
+                if any(w in s_sub for w in ["تواصل", "حجز", "استفسار", "اتصال", "تسجيل"]):
+                    has_contact_sec = True
+                for p_text in sec.get("paragraphs", []):
+                    if core_phone and core_phone in p_text:
+                        has_phone_in_text = True
+                        break
+
+            # Format phone for display (e.g. 010xxxxxxxx or +2010xxxxxxxx)
+            disp_phone = raw_client_phone
+            if disp_phone.startswith("201") and len(disp_phone) == 12:
+                disp_phone = "0" + disp_phone[2:]
+            elif not disp_phone.startswith("0") and not disp_phone.startswith("+") and len(disp_phone) == 10:
+                disp_phone = "0" + disp_phone
+
+            if not has_phone_in_text:
+                article_title_lower = (str(parsed_data.get("title", "")) + " " + current_name).lower()
+                
+                # Contextual subheading & elegant closing wording
+                if any(w in article_title_lower for w in ["طبيب", "دكتور", "د.", "عياد", "مركز طبي", "مستشفى", "علاج", "صحة"]):
+                    chosen_subhead = "طرق التواصل وحجز الاستشارات الطبية"
+                    hon = "الدكتورة" if detected_entity == "female" else "الدكتور"
+                    target_person = f"**{hon} {current_name}**" if current_name else "الفريق الطبي"
+                    closing_p = f"في إطار الحرص على تقديم أفضل مستويات الرعاية الصحية وتيسير المتابعة مع المرضى والمراجعين، يمكن حجز المواعيد والاستفسار عن الاستشارات الطبية المتاحة مع {target_person} عبر الاتصال الهاتفي أو المراسلة المباشرة عبر تطبيق «واتساب» على الرقم: **{disp_phone}**."
+                elif any(w in article_title_lower for w in ["مستشار", "محام", "قانون", "قضاي"]):
+                    chosen_subhead = "قنوات التواصل المباشر وطلب الاستشارات القانونية"
+                    hon = "المستشارة" if detected_entity == "female" else "المستشار"
+                    target_person = f"**{hon} {current_name}**" if current_name else "المكتب القانوني"
+                    closing_p = f"لطلب الاستشارات القانونية وترتيب المقابلات ودراسة القضايا المتخصصة، يتاح التواصل المباشر مع {target_person} عبر الاتصال الهاتفي أو خدمة «واتساب» على الرقم المعتمد: **{disp_phone}**."
+                elif any(w in article_title_lower for w in ["معلم", "أستاذ", "أ.", "أكاديم", "تدريب", "دورة", "كورس", "تعليم", "مدرس", "ثانوية"]):
+                    chosen_subhead = "للتواصل والاستعلام عن البرامج التعليمية والتدريبية"
+                    hon = "الأستاذة" if detected_entity == "female" else "الأستاذ"
+                    target_person = f"**{hon} {current_name}**" if current_name else "إدارة البرامج التعليمية"
+                    closing_p = f"تيسيراً على الطلاب وأولياء الأمور والراغبين في الالتحاق بالبرامج التعليمية ومتابعة خطط التدريب، تم توفير قنوات استفسار وحجز مباشر عبر الاتصال أو تطبيق «واتساب» على الرقم: **{disp_phone}**."
+                elif detected_entity == "plural" or any(w in article_title_lower for w in ["شركة", "مؤسسة", "منصة", "وكالة", "مصنع", "مجموعة"]):
+                    chosen_subhead = "بيانات التواصل وطلب الخدمات والتعاقد"
+                    target_person = f"**{current_name}**" if current_name else "الشركة"
+                    closing_p = f"لطلب الخدمات والاستفسار عن عروض التعاقد ومتابعة أحدث الحلول المتخصصة التي تقدمها {target_person}، تتيح المؤسسة استقبال اتصالات العملاء واستفساراتهم عبر الهاتف وتطبيق «واتساب» على الرقم: **{disp_phone}**."
+                else:
+                    chosen_subhead = "قنوات التواصل المباشر والاستفسار"
+                    hon = "الأستاذة" if detected_entity == "female" else "الأستاذ"
+                    target_person = f"**{hon} {current_name}**" if current_name else "المتخصص"
+                    closing_p = f"للتواصل المباشر والاستفسار عن كافة الخدمات والحلول المتاحة والتنسيق مع {target_person}، يرجى الاتصال هاتفياً أو إرسال رسالة فورية عبر تطبيق «واتساب» على الرقم: **{disp_phone}**."
+
+                # Append to existing contact section or create new final section
+                if cleaned_sections and any(w in cleaned_sections[-1].get("subheading", "") for w in ["تواصل", "حجز", "استفسار", "اتصال"]):
+                    cleaned_sections[-1]["paragraphs"].append(closing_p)
+                else:
+                    cleaned_sections.append({
+                        "subheading": chosen_subhead,
+                        "paragraphs": [closing_p],
+                        "is_bullet_list": False,
+                        "items": []
+                    })
+
+        # ------------------------------------------------------
         # Title (Google SERP Clean Formatting)
         # ------------------------------------------------------
 
@@ -2618,10 +2973,16 @@ Do not invent facts."""
 
         title = re.sub(r"\s*:\s*", "..", title)
         title = re.sub(r"\s*\.{2,}\s*", "..", title)
-        title = re.sub(r"\s+-\s+", "..", title)
+        title = re.sub(r"[:\.\s]*(خدمات وحلول متكاملة|حلول وخدمات متكاملة)\s*$", "", title).strip()
+        title = re.sub(r"[\.:\s]+$", "", title).strip()
         if ".." in title:
             parts = title.split("..", 1)
             title = f"{parts[0].strip()}..{parts[1].strip()}"
+
+        if len(title) > 62:
+            trimmed = title[:60].rsplit(' ', 1)[0].rstrip(':, -.')
+            if len(trimmed) >= 42:
+                title = trimmed
 
         parsed_data[
             "title"
@@ -2672,6 +3033,303 @@ Do not invent facts."""
         parsed_data.pop("faqs", None)
 
         return parsed_data
+
+    def generate_social_caption(
+        self,
+        article_title: str,
+        article_content: str,
+        main_url: str
+    ) -> str:
+        """
+        Generates a standardized, high-end social media caption for an approved article,
+        following the official editorial template of 'جريدة تحت الضوء الإخبارية':
+        1. Opening line: تسلّط «تحت الضوء الإخبارية» الضوء على [الاسم واللقب/الصفة]، [المهنة/التخصص]، الذي/التي ...
+        2. Body: 2 to 4 concise summary paragraphs.
+        3. Punchline line: [الاسم واللقب].. [جملة تلخيصية مركزة لرسالته أو خدماته أو خبرته].
+        4. Client contacts: (if phone numbers exist in the article):
+           📞 للاستشارات والحجز عبر الاتصال أو واتساب:
+           [الرقم 1]
+           [الرقم 2]
+        5. Fixed official footer:
+           📰 رابط الخبر كاملًا:
+           {main_url}
+           📞 للتواصل مع جريدة تحت الضوء الإخبارية:
+           01094775924
+           تحت الضوء الإخبارية.. نسلط الضوء على كل ما يهمك.
+        """
+        from bs4 import BeautifulSoup
+        import re
+
+        clean_text = article_content or ""
+        if "<" in clean_text and ">" in clean_text:
+            try:
+                soup = BeautifulSoup(clean_text, "html.parser")
+                clean_text = soup.get_text(separator=" ").strip()
+            except Exception:
+                pass
+
+        # Extract client phone numbers (010, 011, 012, 015)
+        raw_phones = re.findall(r"(?:01[0125]\d{8})", clean_text)
+        # Exclude official newspaper phone 01094775924
+        client_phones = [p for p in raw_phones if p != "01094775924"]
+        unique_client_phones = list(dict.fromkeys(client_phones))
+
+        phones_block = ""
+        if unique_client_phones:
+            phones_block = "📞 للاستشارات والحجز عبر الاتصال أو واتساب:\n" + "\n".join(unique_client_phones)
+
+        prompt_system = f"""أنت محرر صحفي خبير ومسؤول النشر على منصات التواصل الاجتماعي في «جريدة تحت الضوء الإخبارية».
+مهمتك صياغة كابشن احترافي ومكثف للمقال الصحفي المرفق لنشره على منصات التواصل الاجتماعي (فيسبوك، لينكدإن، تيليجرام، وغيرها) وفقاً للقالب التحريري الصارم التالي:
+
+1. البداية الإلزامية:
+تبدأ دائماً وأبداً بهذه الصيغة الدقيقة دون أي كلمة قبلها:
+تسلّط «تحت الضوء الإخبارية» الضوء على [الاسم واللقب/الصفة]، [المهنة/التخصص/المنصب]، الذي/التي [موجز مكثف في سطرين لما يقدمه أو مجال تميزه ودوره].
+
+2. متن الكابشن (من فقرتين إلى 4 فقرات قصيرة ومكثفة):
+- تلخيص صحفي رصين لأهم النقاط والخدمات والأفكار الواردة في الخبر بأسلوب راقٍ وموجز.
+- تبدأ الفقرات بأسلوب صحفي مشوق مثل: (يركز... / كما تشمل... / وتعتمد... / وعند... / وتقدم... / ويحرص...).
+
+3. السطر الختامي المركّز (Punchline):
+سطر مستقل يلخص جوهر الرسالة قبل وسائل الاتصال بصيغة:
+[الاسم أو الصفة].. [عبارة تلخيصية مكثفة للمنهجية أو التجربة أو النصائح].
+
+4. أرقام الاتصال والحجز الخاصة بالعميل (فقط إذا ذُكرت أرقام هواتف للعميل في المقال):
+📞 للاستشارات والحجز عبر الاتصال أو واتساب:
+[أرقام هواتف العميل المستخرجة من المقال]
+
+5. التذييل الثابت الإلزامي (يوضع نصاً ومباشرة في نهاية الكابشن دائماً، بدون أقواس ماركداون أو نصوص زائدة):
+📰 رابط الخبر كاملًا:
+{main_url}
+📞 للتواصل مع جريدة تحت الضوء الإخبارية:
+01094775924
+تحت الضوء الإخبارية.. نسلط الضوء على كل ما يهمك.
+
+قواعد تحريرية حاسمة:
+- لا تكتب أي مقدمات أو شروحات (مثل "إليك الكابشن" أو "بالتأكيد").
+- أخرج نص الكابشن النهائي فقط كاملاً ومكتملاً ليكون جاهزاً للنسخ بنقرة واحدة.
+- ضع رابط الخبر المباشر تحت «📰 رابط الخبر كاملًا:» بدون أقواس ماركداون وبدون جملة [اقرأ الخبر كاملًا...].
+- التزم بنبرة الفخامة الصحفية الرصينة لجريدة تحت الضوء الإخبارية.
+"""
+
+        user_content = f"عنوان المقال: {article_title}\n\nنص المقال:\n{clean_text[:3500]}"
+        if unique_client_phones:
+            user_content += f"\n\nأرقام هواتف العميل المستخرجة: {', '.join(unique_client_phones)}"
+
+        # Attempt with Z.AI / GLM
+        try:
+            if self.zai_clients:
+                client = self.zai_clients[0]
+                resp = client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": prompt_system},
+                        {"role": "user", "content": user_content}
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000
+                )
+                caption = resp.choices[0].message.content.strip()
+                if caption and "تسلّط «تحت الضوء الإخبارية»" in caption:
+                    # Sanitize any markdown links in the footer to ensure plain URL
+                    caption = re.sub(r'\[.*?\]\((' + re.escape(main_url) + r'|[^\)]+)\)', r'\1', caption)
+                    return caption
+        except Exception as e:
+            logger.warning(f"Z.AI caption generation fallback: {e}")
+
+        # Attempt fallback with Google Gemini
+        if getattr(self, "gemini_client", None):
+            for gm in ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.5-flash", self.gemini_model]:
+                try:
+                    gem_resp = self.gemini_client.chat.completions.create(
+                        model=gm,
+                        messages=[
+                            {"role": "system", "content": prompt_system},
+                            {"role": "user", "content": user_content}
+                        ],
+                        temperature=0.3,
+                        max_tokens=2000
+                    )
+                    caption = gem_resp.choices[0].message.content.strip()
+                    if caption and "تسلّط «تحت الضوء الإخبارية»" in caption:
+                        caption = re.sub(r'\[.*?\]\((' + re.escape(main_url) + r'|[^\)]+)\)', r'\1', caption)
+                        return caption
+                except Exception as gem_e:
+                    logger.warning(f"Gemini caption model {gm} fallback: {gem_e}")
+                    continue
+
+        # Fallback Caption if API is unreachable
+        parts = []
+        name_clean = re.sub(r'^(خبر صحفي|مقال|تقرير)\s*[:\-]\s*', '', article_title).strip()
+        parts.append(f"تسلّط «تحت الضوء الإخبارية» الضوء على {name_clean}، مسلطة الضوء على أبرز الملامح والخدمات والتفاصيل الهامة.")
+        snippet = clean_text[:300].strip()
+        if snippet:
+            parts.append(snippet + "...")
+        parts.append(f"{name_clean}.. مسيرة متميزة ورؤية واعدة.")
+        if phones_block:
+            parts.append(phones_block)
+        parts.append(f"📰 رابط الخبر كاملًا:\n{main_url}\n📞 للتواصل مع جريدة تحت الضوء الإخبارية:\n01094775924\nتحت الضوء الإخبارية.. نسلط الضوء على كل ما يهمك.")
+        return "\n\n".join(parts)
+
+    # ==============================================================
+    # SURGICAL CLIENT EDITS (المعدّل الصحفي الجراحي الذكي عبر Gemini)
+    # ==============================================================
+
+    def apply_surgical_client_edits(
+        self,
+        original_title: str,
+        original_content: str,
+        client_notes: str
+    ) -> Dict[str, Any]:
+        """
+        Surgically applies client modifications to an existing published article using Google Gemini (with resilient fallbacks).
+        Strictly preserves untouched content, existing HTML formatting, official intro, and title rules.
+        """
+        import requests
+        import json
+
+        orig_title = (original_title or "").strip()
+        orig_content = (original_content or "").strip()
+        notes = (client_notes or "").strip()
+
+        if not orig_content:
+            return {"success": False, "error": "محتوى المقال الأصلي فارغ"}
+        if not notes:
+            return {"success": False, "error": "يرجى كتابة أو لصق تعديلات العميل"}
+
+        system_prompt = (
+            "أنت محرر صحفي خبير ومساعد تحريري لـ \"جريدة تحت الضوء الإخبارية\".\n"
+            "مهمتك إجراء \"تعديل جراحي دقيق وموضعي\" (Surgical Edit) على مقال صحفي منشور، بناءً على ملاحظات وطلبات العميل فقط لا غير.\n\n"
+            "⚠️ قواعد بالغة الأهمية:\n"
+            "1. الالتزام بالحفاظ التام (Preservation): اترك 95%-99% من المقال كما هو حرفياً دون أي إعادة صياغة عشوائية. كل فقرة وعنوان ومعلومة لم يطلب العميل تغييرها اتركها كما هي تماماً بنفس كلماتها.\n"
+            "2. التعديل الجراحي الموضعي: عدل أو أضف أو احذف فقط النقاط المحددة التي طلبها العميل في ملاحظاته (مثل: تعديل رقم الهاتف، إضافة فرع جديد، تعديل اللقب العلمي أو الوظيفة، تعديل الأسعار، إضافة أو حذف خدمة).\n"
+            "3. الحفاظ على تنسيق HTML: حافظ على وسوم HTML كما هي (<p>, <h3>, <ul>, <li>, <strong>, إلخ) دون تخريب بنيتها.\n"
+            "4. الحفاظ على هوية الجريدة:\n"
+            "   - الديباجة الرسمية في أول المقال: «في إطار اهتمام **جريدة تحت الضوء الإخبارية** بتسليط الضوء على...» يجب أن تبقى كما هي دون مساس.\n"
+            "   - العنوان: إذا كان طلب العميل يؤثر على الاسم أو اللقب أو التخصص، عدله مع الالتزام الصارم بفاصل النقطتين `..` دون مسافات حولها (مثال: `الاسم..الفكرة`). إذا لم يطلب العميل تغيير الاسم أو العنوان، اتركه كما هو دون أدنى تغيير.\n"
+            "5. الرد بتنسيق JSON حصراً بالشكل التالي:\n"
+            "{\n"
+            "  \"title\": \"العنوان النهائي بعد التعديل (أو الأصلي إذا لم يتغير)\",\n"
+            "  \"content\": \"محتوى المقال الكامل بتنسيق HTML بعد التعديل الجراحي الموضعي\",\n"
+            "  \"changes_summary\": \"ملخص بالنقاط باللغة العربية لما تم تعديله بالضبط\"\n"
+            "}"
+        )
+
+        user_prompt = (
+            f"[بيانات المقال الحالي]\n"
+            f"العنوان الحالي:\n{orig_title}\n\n"
+            f"المحتوى الحالي (HTML):\n{orig_content}\n\n"
+            f"[ملاحظات وطلبات العميل كما أرسلها (نسخ/لصق)]:\n{notes}\n"
+        )
+
+        # 1. Try Gemini Native API with cascade of models
+        gemini_key = getattr(Config, "GEMINI_API_KEY", "") or os.getenv("GEMINI_API_KEY", "")
+        gemini_models = [
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-flash-latest",
+            "gemini-3.8-flash",
+            "gemini-3.7-flash",
+            "gemini-pro-latest"
+        ]
+
+        if gemini_key:
+            for g_model in gemini_models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{g_model}:generateContent?key={gemini_key}"
+                    payload = {
+                        "systemInstruction": {"parts": [{"text": system_prompt}]},
+                        "contents": [{"parts": [{"text": user_prompt}]}],
+                        "generationConfig": {
+                            "responseMimeType": "application/json",
+                            "temperature": 0.2
+                        }
+                    }
+                    r = requests.post(url, json=payload, timeout=30)
+                    if r.status_code == 200:
+                        res_json = r.json()
+                        raw_text = res_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                        if raw_text:
+                            raw_clean = re.sub(r"^```json\s*", "", raw_text.strip(), flags=re.MULTILINE)
+                            raw_clean = re.sub(r"```$", "", raw_clean.strip(), flags=re.MULTILINE)
+                            data = json.loads(raw_clean)
+                            new_title = data.get("title", orig_title).strip()
+                            if ":" in new_title and ".." not in new_title:
+                                new_title = re.sub(r"\s*:\s*", "..", new_title)
+                            return {
+                                "success": True,
+                                "engine": f"Gemini ({g_model})",
+                                "title": new_title,
+                                "content": data.get("content", orig_content),
+                                "changes_summary": data.get("changes_summary", "- تم تطبيق تعديلات العميل المحددة بنجاح.")
+                            }
+                    else:
+                        logger.warning(f"[Surgical Edit] Gemini model {g_model} returned HTTP {r.status_code}: {r.text[:120]}")
+                except Exception as e:
+                    logger.warning(f"[Surgical Edit] Gemini model {g_model} failed: {e}")
+
+        # 2. Fallback to Z.AI GLM-4.7-flash / GLM-4-flash
+        if getattr(self, "zai_client", None):
+            try:
+                logger.info("[Surgical Edit] Switching to Z.AI fallback...")
+                resp = self.zai_client.chat.completions.create(
+                    model=getattr(self, "zai_model", "glm-4-flash") or "glm-4-flash",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.2,
+                    max_tokens=4000,
+                    timeout=30
+                )
+                raw_text = resp.choices[0].message.content.strip()
+                raw_clean = re.sub(r"^```json\s*", "", raw_text, flags=re.MULTILINE)
+                raw_clean = re.sub(r"```$", "", raw_clean.strip(), flags=re.MULTILINE)
+                data = json.loads(raw_clean)
+                new_title = data.get("title", orig_title).strip()
+                if ":" in new_title and ".." not in new_title:
+                    new_title = re.sub(r"\s*:\s*", "..", new_title)
+                return {
+                    "success": True,
+                    "engine": "Z.AI GLM-4",
+                    "title": new_title,
+                    "content": data.get("content", orig_content),
+                    "changes_summary": data.get("changes_summary", "- تم تطبيق تعديلات العميل عبر محرك Z.AI.")
+                }
+            except Exception as z_err:
+                logger.error(f"[Surgical Edit] Z.AI fallback error: {z_err}")
+
+        # 3. Fallback to Groq
+        if getattr(self, "groq_client", None):
+            try:
+                logger.info("[Surgical Edit] Switching to Groq fallback...")
+                resp = self.groq_client.chat.completions.create(
+                    model=getattr(self, "groq_model", "openai/gpt-oss-120b"),
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.2,
+                    max_tokens=4000,
+                    timeout=30
+                )
+                raw_text = resp.choices[0].message.content.strip()
+                raw_clean = re.sub(r"^```json\s*", "", raw_text, flags=re.MULTILINE)
+                raw_clean = re.sub(r"```$", "", raw_clean.strip(), flags=re.MULTILINE)
+                data = json.loads(raw_clean)
+                new_title = data.get("title", orig_title).strip()
+                if ":" in new_title and ".." not in new_title:
+                    new_title = re.sub(r"\s*:\s*", "..", new_title)
+                return {
+                    "success": True,
+                    "engine": "Groq Cloud",
+                    "title": new_title,
+                    "content": data.get("content", orig_content),
+                    "changes_summary": data.get("changes_summary", "- تم تطبيق تعديلات العميل عبر محرك Groq.")
+                }
+            except Exception as g_err:
+                logger.error(f"[Surgical Edit] Groq fallback error: {g_err}")
+
+        return {"success": False, "error": "تعذر الاتصال بجميع محركات الذكاء الاصطناعي (Gemini / Z.AI / Groq)"}
 
 
 # ==============================================================

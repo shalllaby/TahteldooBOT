@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>جريدة تحت الضوء الإخبارية — منظومة النشر الذكي السحابية</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 
@@ -21,6 +24,7 @@
       </div>
       <h2 class="login-title">جريدة تحت الضوء الإخبارية</h2>
       <p class="login-subtitle">منظومة النشر الصحفي الذكي والذكاء الاصطناعي v4.0</p>
+      <p style="font-size: 12px; color: var(--accent-gold); margin-top: -6px; margin-bottom: 14px; font-weight: 600;">رئيس التحرير: أ/ محمد شلبي • هاتف: 01094775924</p>
 
       <div id="login-error-box"
         style="display:none; background: var(--color-error-bg); border: 1px solid var(--color-error-border); color: var(--color-error); padding: 10px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 13px; font-weight: 600;">
@@ -111,6 +115,74 @@
   </div>
 
   <!-- =======================================================================
+       FIRST-TIME IDENTITY SETUP MODAL (ONBOARDING)
+       ======================================================================= -->
+  <div id="identity-setup-modal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(5, 8, 15, 0.88); backdrop-filter: blur(14px); align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card" style="max-width: 500px; width: 100%; border: 1.5px solid var(--accent-gold); box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 35px rgba(245, 158, 11, 0.28); border-radius: 18px; padding: 28px; text-align: right; animation: modalFadeIn 0.3s ease-out;">
+      <div style="text-align: center; margin-bottom: 22px;">
+        <div style="font-size: 44px; margin-bottom: 8px;">✨</div>
+        <h3 style="font-size: 21px; font-weight: 800; color: var(--accent-gold); margin-bottom: 6px;">استكمال هويتك الصحفية</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+          أهلاً بك في منظومة جريدة تحت الضوء! يرجى إدخال اسمك الثنائي وتحديد صفتك لاعتمادها رسمياً في رسائل الواتساب المرسلة للعملاء وداخل المنصة.
+        </p>
+      </div>
+
+      <form id="form-identity-setup">
+        <!-- Full Name (Binary) -->
+        <div class="form-group" style="margin-bottom: 18px;">
+          <label class="form-label" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <span>👤</span>
+            <span>الاسم الثنائي المعتمد</span>
+            <span style="color: #EF4444;">*</span>
+          </label>
+          <input type="text" id="identity-fullname-input" class="form-input" placeholder="مثال: محمد ابراهيم أو هدى أحمد" required
+            style="font-size: 15px; font-weight: 700; padding: 12px 14px; border-radius: 10px; border-color: rgba(245, 158, 11, 0.35);">
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 5px;">
+            ⚠️ يجب كتابة الاسم ثنائياً على الأقل (الاسم الأول واسم العائلة).
+          </div>
+        </div>
+
+        <!-- Gender Selection -->
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; display: block;">
+            <span>⚧️</span>
+            <span>الصفة الصحفية والجنس</span>
+            <span style="color: #EF4444;">*</span>
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <label class="gender-card-opt" id="card-gender-male" style="cursor: pointer; border: 2px solid var(--accent-gold); background: rgba(245, 158, 11, 0.12); border-radius: 12px; padding: 14px; text-align: center; transition: all 0.2s; display: block;">
+              <input type="radio" name="identity-gender" value="male" checked style="display: none;">
+              <div style="font-size: 28px; margin-bottom: 4px;">👨</div>
+              <div style="font-weight: 800; font-size: 14px; color: var(--text-primary);">ذكر</div>
+              <div style="font-size: 11px; color: var(--accent-gold); margin-top: 2px; font-weight: 600;">صحفي لدى الجريدة</div>
+            </label>
+            <label class="gender-card-opt" id="card-gender-female" style="cursor: pointer; border: 2px solid var(--border-subtle); background: var(--bg-surface-2); border-radius: 12px; padding: 14px; text-align: center; transition: all 0.2s; display: block;">
+              <input type="radio" name="identity-gender" value="female" style="display: none;">
+              <div style="font-size: 28px; margin-bottom: 4px;">👩</div>
+              <div style="font-weight: 800; font-size: 14px; color: var(--text-primary);">أنثى</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 600;">صحفية لدى الجريدة</div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Live WhatsApp Preview -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 12px 14px; margin-bottom: 22px;">
+          <div style="font-size: 11.5px; font-weight: 700; color: #10B981; margin-bottom: 4px;">
+            📲 معاينة جملة التعريف في رسالة الواتساب للعملاء:
+          </div>
+          <div id="identity-whatsapp-preview" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); line-height: 1.5;">
+            أنا محمد ابراهيم، صحفي لدى جريدة تحت الضوء الإخبارية
+          </div>
+        </div>
+
+        <button type="submit" id="btn-save-identity" class="btn btn-gold btn-block" style="font-size: 15px; font-weight: 800; height: 48px; border-radius: 10px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);">
+          حفظ واعتماد الهوية الصحفية 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
        APP CONTAINER
        ======================================================================= -->
   <div id="app-container">
@@ -137,12 +209,50 @@
             </svg>
             <span>إنشاء خبر سريع</span>
           </a>
+          <a class="nav-item" data-view="poster-studio" id="nav-item-poster-studio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>استوديو البوسترات</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(245, 158, 11, 0.2); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.4);">🎨 ذكي</span>
+          </a>
           <a class="nav-item" data-view="verification">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             <span>فحص العملاء والتكرار</span>
+          </a>
+          <a class="nav-item" data-view="whatsapp-tool">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+            <span>تجهيز روابط الواتساب</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.4);">⚡ جديد</span>
+          </a>
+          <a class="nav-item" data-view="smart-editor" id="nav-item-smart-editor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span>تعديل ذكي بطلب العميل</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.4);">🤖 Gemini</span>
+          </a>
+          <a class="nav-item" data-view="promote-tool" id="nav-item-promote-tool" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>اعتماد الخبر</span>
+            <span class="badge badge-gold" style="font-size: 10px; padding: 2px 6px; margin-right: auto;">⭐ معتمد</span>
+          </a>
+          <a class="nav-item" data-view="review-cleanup" id="nav-item-review-cleanup" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6"/>
+            </svg>
+            <span>تنظيف أخبار الريفيو</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(239, 68, 68, 0.18); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.35);">🧹 ذكي</span>
           </a>
           <a class="nav-item" data-view="articles">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -167,6 +277,31 @@
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
             <span>فريق المراسلين</span>
+          </a>
+          <a class="nav-item admin-only" data-view="customer-leads" id="nav-customer-leads" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <line x1="19" y1="8" x2="19" y2="14"/>
+              <line x1="22" y1="11" x2="16" y2="11"/>
+            </svg>
+            <span>بيانات العملاء</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(217, 119, 6, 0.18); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.35);">📇 حصري</span>
+          </a>
+          <a class="nav-item admin-only" data-view="facebook-hub" id="nav-facebook-hub" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+            </svg>
+            <span>إدارة فيسبوك</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(24, 119, 242, 0.18); color: #1877F2; border: 1px solid rgba(24, 119, 242, 0.35);">📡 مباشر</span>
+          </a>
+          <a class="nav-item admin-only" data-view="gemini-fallback" id="nav-gemini-fallback" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <span>بديل الذكاء (Gemini)</span>
+            <span class="badge" style="font-size: 10px; padding: 2px 6px; margin-right: auto; background: rgba(59, 130, 246, 0.18); color: #60A5FA; border: 1px solid rgba(96, 165, 250, 0.35);">🛡️ Fallback</span>
           </a>
           <a class="nav-item admin-only" data-view="bot-control">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -247,7 +382,13 @@
               <line x1="12" y1="20" x2="12" y2="4" />
               <line x1="6" y1="20" x2="6" y2="14" />
             </svg>
-            <span id="quota-text">كوتا Blogger: جاري الفحص...</span>
+            <span id="quota-text">حالة ووردبريس: جاري الفحص...</span>
+          </div>
+
+          <!-- GLM AI Engine Health HUD -->
+          <div id="hud-ai-health" class="hud-pill success" style="cursor: pointer;" title="حالة وضغط محرك الذكاء الاصطناعي GLM (انقر للتفاصيل أو الفحص)">
+            <span id="hud-ai-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block; box-shadow: 0 0 6px #10B981;"></span>
+            <span id="hud-ai-text">GLM: جاري الفحص...</span>
           </div>
         </div>
 
@@ -416,6 +557,233 @@
         </section>
 
         <!-- ===================================================================
+             VIEW: AI POSTER STUDIO (استوديو البوسترات الصحفية الذكي)
+             =================================================================== -->
+        <section id="view-poster-studio" class="view-section">
+          <!-- Header Banner -->
+          <div class="glass-card" style="margin-bottom: 24px; position: relative; overflow: hidden; border: 1px solid var(--border-card); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(17, 24, 39, 0.95) 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, #F59E0B, #B45309); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);">
+                  🎨
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <h2 style="font-size: 20px; font-weight: 800; margin: 0; color: #FFF;">استوديو البوسترات الصحفية الذكي</h2>
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 11px; font-weight: 700;">1024 × 1024 HD</span>
+                  </div>
+                  <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0;">
+                    توليد مانشيتات وبوسترات معتمدة طبقاً للهوية البصرية لجريدة «تحت الضوء» مع تدقيق النصوص والتاريخ المصري اللحظي.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Live Date Pill & Engine Status -->
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; padding: 6px 14px; font-size: 12.5px;">
+                  <span style="font-size: 14px;">📅</span>
+                  <span id="poster-studio-egypt-date" style="color: var(--accent-gold); font-weight: 700;">تحميل التاريخ...</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 30px; padding: 6px 14px; font-size: 12px; color: #10B981; font-weight: 700;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px #10B981; display: inline-block;"></span>
+                  <span>الوكيل الآلي نشط (LangGraph)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Studio Workspace Grid -->
+          <div class="poster-studio-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px; align-items: start;">
+            
+            <!-- Column 1: Input & Configuration Form -->
+            <div class="glass-card" style="padding: 24px;">
+              <div class="card-title" style="margin-bottom: 20px; font-size: 16px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <span>بيانات ومعطيات الخبر</span>
+              </div>
+
+              <form id="poster-studio-form" onsubmit="return false;">
+                <!-- News Title / Headline Input -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13.5px; font-weight: 700;">
+                    <span>عنوان الخبر / المانشيت الصحفي <span style="color: #EF4444;">*</span></span>
+                    <span style="font-size: 11px; color: var(--accent-gold); font-weight: 600;"># يبدأ تلقائياً بالهاشتاج</span>
+                  </label>
+                  <textarea id="poster-input-title" class="form-input" rows="3" style="width: 100%; resize: vertical; font-size: 14.5px; font-weight: 600; line-height: 1.6;" placeholder="اكتب المانشيت الصحفي الرئيسي هنا (مثال: الرئيس يوجه بتوسيع شبكات الحماية الاجتماعية للأسر الأكثر احتياجاً)..." required></textarea>
+                </div>
+
+                <!-- Secondary Inputs: Category & Optional URL -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                  <div class="form-group">
+                    <label style="display: block; margin-bottom: 8px; font-size: 13.5px; font-weight: 700;">
+                      <span>شارة التصنيف</span>
+                    </label>
+                    <select id="poster-input-category" class="form-input" style="width: 100%; height: 46px; font-size: 14px;">
+                      <option value="">✨ تحديد ذكي آلياً (Auto)</option>
+                      <option value="خدمات">🏢 خدمات</option>
+                      <option value="تعليم">🎓 تعليم</option>
+                      <option value="صحة">🏥 صحة</option>
+                      <option value="اقتصاد">📈 اقتصاد</option>
+                      <option value="سياسة">🏛️ سياسة</option>
+                      <option value="حوادث">🚨 حوادث</option>
+                      <option value="رياضة">⚽ رياضة</option>
+                      <option value="أخبار عاجلة">⚡ أخبار عاجلة</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label style="display: block; margin-bottom: 8px; font-size: 13.5px; font-weight: 700;">
+                      <span>رابط المقال (اختياري)</span>
+                    </label>
+                    <input type="url" id="poster-input-url" class="form-input" style="width: 100%; height: 46px;" placeholder="https://..." dir="ltr">
+                  </div>
+                </div>
+
+                <!-- Image Upload Dropzone -->
+                <div class="form-group" style="margin-bottom: 22px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 13.5px; font-weight: 700; margin: 0;">
+                      <span>صورة الخبر أو الشخصية المرفقة</span>
+                      <span style="font-size: 11.5px; color: var(--text-muted); font-weight: 400; margin-right: 6px;">(اختياري - يتم توظيفها داخل إطار التصميم)</span>
+                    </label>
+                    <button type="button" id="btn-paste-poster-image" class="btn btn-secondary" style="font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid rgba(245, 158, 11, 0.4); color: var(--accent-gold); background: rgba(245, 158, 11, 0.12); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                      <span>📋</span>
+                      <span>لصق الصورة من النسخ (Paste)</span>
+                    </button>
+                  </div>
+
+                  <div id="poster-dropzone" style="border: 2px dashed rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 22px; text-align: center; background: rgba(0,0,0,0.25); cursor: pointer; transition: all 0.25s ease;">
+                    <input type="file" id="poster-file-input" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;">
+                    
+                    <!-- Empty dropzone state -->
+                    <div id="poster-dropzone-empty">
+                      <div style="font-size: 36px; margin-bottom: 6px;">📸</div>
+                      <div style="font-weight: 700; font-size: 14px; color: #FFF; margin-bottom: 4px;">اسحب وأفلت صورة الخبر هنا، أو اضغط للاختيار</div>
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 12px; color: var(--text-muted);">يدعم صيغ PNG, JPG, WEBP حتى 15 ميجابايت</span>
+                        <span style="color: var(--text-muted); font-size: 11px;">•</span>
+                        <span style="font-size: 11.5px; color: var(--accent-gold); background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); padding: 2px 8px; border-radius: 4px; font-weight: 600;">⌨️ أو اضغط Ctrl + V للصق المباشر</span>
+                      </div>
+                    </div>
+
+                    <!-- File selected state -->
+                    <div id="poster-dropzone-preview" style="display: none; align-items: center; justify-content: space-between; gap: 16px; background: rgba(17, 24, 39, 0.8); padding: 12px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                      <div style="display: flex; align-items: center; gap: 12px; overflow: hidden;">
+                        <img id="poster-thumb-preview" src="" style="width: 54px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); flex-shrink: 0;" alt="Preview">
+                        <div style="text-align: right; overflow: hidden;">
+                          <div id="poster-file-name" style="font-size: 13px; font-weight: 700; color: #FFF; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">filename.png</div>
+                          <div id="poster-file-size" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">0 KB</div>
+                        </div>
+                      </div>
+                      <button type="button" id="btn-remove-poster-file" class="btn" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 6px; flex-shrink: 0;">
+                        ✕ إزالة
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- AI Processing Toggles -->
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 24px;">
+                  <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none;">
+                    <input type="checkbox" id="poster-toggle-remove-person" style="width: 18px; height: 18px; accent-color: var(--accent-gold); cursor: pointer;">
+                    <div>
+                      <div style="font-size: 13.5px; font-weight: 700; color: #FFF;">إزالة الأشخاص بالذكاء الاصطناعي (Generative Backdrop)</div>
+                      <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">في حال كانت الصورة لشخصية ويراد استبدالها بخلفية موضوعية هادئة تعبر عن سياق الخبر.</div>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Generate Hero Button -->
+                <button type="button" id="btn-generate-ai-poster" class="btn btn-gold" style="width: 100%; padding: 15px; font-size: 15.5px; font-weight: 800; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); cursor: pointer; transition: all 0.25s ease;">
+                  <span style="font-size: 20px;">⚡</span>
+                  <span id="poster-btn-text">توليد البوستر الصحفي المعتمد (1024×1024)</span>
+                </button>
+
+                <!-- Dynamic Agent Progress Tracker -->
+                <div id="poster-agent-progress" style="display: none; margin-top: 20px; background: rgba(0,0,0,0.3); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 16px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <div class="spinner" style="width: 18px; height: 18px; border: 2px solid rgba(245, 158, 11, 0.2); border-top-color: var(--accent-gold); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                      <span id="poster-progress-status-text" style="font-size: 13px; font-weight: 700; color: var(--accent-gold);">جاري تشغيل الوكيل الصحفي...</span>
+                    </div>
+                    <span id="poster-progress-step-pill" class="badge" style="background: rgba(245, 158, 11, 0.2); color: #F59E0B; font-size: 11px;">مرحلة 1 من 4</span>
+                  </div>
+                  <!-- Progress Bar -->
+                  <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+                    <div id="poster-progress-bar" style="width: 25%; height: 100%; background: linear-gradient(90deg, #F59E0B, #10B981); transition: width 0.4s ease;"></div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Column 2: Live Poster Preview & Actions -->
+            <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column;">
+              <div class="card-title" style="margin-bottom: 16px; font-size: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span>المعاينة اللحظية للبوستر</span>
+                </div>
+                <span id="poster-qc-badge" class="badge" style="display: none; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.35); font-size: 11px; font-weight: 700;">
+                  ✓ اجتاز فحص الجودة 100%
+                </span>
+              </div>
+
+              <!-- Poster Canvas / Image Display Box -->
+              <div style="position: relative; width: 100%; aspect-ratio: 1 / 1; background: #0B0F19; border-radius: var(--radius-md); overflow: hidden; border: 1.5px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                
+                <!-- Initial Empty State -->
+                <div id="poster-empty-preview" style="text-align: center; padding: 30px 20px;">
+                  <div style="width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 20px; background: rgba(245, 158, 11, 0.08); border: 1px dashed rgba(245, 158, 11, 0.3); display: flex; align-items: center; justify-content: center; font-size: 36px;">
+                    📰
+                  </div>
+                  <h4 style="font-size: 15px; font-weight: 700; color: #FFF; margin: 0 0 6px;">مساحة البوستر جاهزة (1024×1024)</h4>
+                  <p style="font-size: 12.5px; color: var(--text-muted); max-width: 280px; margin: 0 auto; line-height: 1.5;">
+                    أدخل عنوان الخبر واضغط «توليد البوستر» ليقوم الوكيل بتركيب الهوية والمحتوى مباشرة هنا.
+                  </p>
+                </div>
+
+                <!-- Rendered Poster Image -->
+                <img id="poster-rendered-img" src="" alt="Tahteldoo News Poster" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: var(--radius-md);">
+              </div>
+
+              <!-- Action Buttons (Visible after generation) -->
+              <div id="poster-actions-panel" style="display: none; margin-top: 18px; flex-direction: column; gap: 10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <a id="btn-download-poster-hd" href="#" download="tahteldoo_poster.png" class="btn btn-gold" style="padding: 11px; font-size: 13.5px; font-weight: 700; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span>📥</span>
+                    <span>تحميل HD (PNG)</span>
+                  </a>
+                  <a id="btn-open-full-poster" href="#" target="_blank" class="btn btn-secondary" style="padding: 11px; font-size: 13.5px; font-weight: 700; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span>👁️</span>
+                    <span>عرض بالحجم الكامل</span>
+                  </a>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <button type="button" id="btn-copy-poster-link" class="btn btn-secondary" style="padding: 10px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <span>📋</span>
+                    <span>نسخ الرابط</span>
+                  </button>
+                  <button type="button" id="btn-reset-poster-form" class="btn btn-secondary" style="padding: 10px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-muted);">
+                    <span>🔄</span>
+                    <span>تصميم جديد</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================================
              VIEW 3: CLIENT VERIFICATION & DUPLICATE CHECK
              =================================================================== -->
         <section id="view-verification" class="view-section">
@@ -450,6 +818,449 @@
                 التليجرام أو محرري المنظومة السحابية.
               </p>
             </div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW 3: WHATSAPP DIRECT LINK GENERATOR & PHONE NORMALIZER
+             =================================================================== -->
+        <section id="view-whatsapp-tool" class="view-section">
+          
+          <!-- Top Hero Banner -->
+          <div class="glass-card" style="margin-bottom: 22px; padding: 24px 26px; background: linear-gradient(135deg, rgba(37, 211, 102, 0.08) 0%, rgba(245, 158, 11, 0.05) 50%, rgba(18, 24, 38, 0.95) 100%); border: 1.5px solid rgba(37, 211, 102, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span style="font-size: 30px;">📲</span>
+                  <h2 style="font-size: 21px; font-weight: 800; color: #25D366; margin: 0;">مُوَلّد ومُنظّم روابط واتساب الفورية</h2>
+                  <span class="badge" style="background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid rgba(37, 211, 102, 0.4); font-size: 11px; padding: 3px 8px;">ذكاء معالجة الأرقام ⚡</span>
+                </div>
+                <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0; line-height: 1.6; max-width: 650px;">
+                  أدخل أو الصق أي رقم واتساب بأي طريقة أو صيغة كانت (أرقام عربية، مسافات، شرطات، نصوص منسوخة، أو بدون مفتاح الدولة)، وسيقوم النظام بتنظيمه وتجهيز رابط تواصل مباشر بنقرة واحدة.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button type="button" id="btn-wa-paste-clipboard" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 10px 16px;">
+                  <span>📋</span>
+                  <span>لصق من الحافظة</span>
+                </button>
+                <button type="button" id="btn-wa-clear-all" class="btn btn-secondary" style="font-size: 13px; padding: 10px 16px;">
+                  <span>🧹 مسح</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px;" class="wa-tool-grid">
+            
+            <!-- Left Column: Input Form -->
+            <div class="glass-card" style="padding: 24px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: var(--accent-gold); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>✏️</span>
+                <span>بيانات الرقم والرسالة</span>
+              </h3>
+
+              <form id="form-whatsapp-normalizer" onsubmit="event.preventDefault(); processWhatsAppPhone();">
+                <!-- Phone Input -->
+                <div class="form-group" style="margin-bottom: 18px;">
+                  <label class="form-label" style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                    <span>📞 أدخل رقم الهاتف أو النص المحتوي على الرقم:</span>
+                    <span style="font-size: 11px; color: var(--accent-gold);">محلي أو دولي</span>
+                  </label>
+                  <textarea id="wa-input-raw" class="form-input" rows="3" placeholder="اكتب أو الصق الرقم هنا...&#10;أمثلة مدعومة:&#10;• 010 1234 5678&#10;• +201123456789 أو ٠١٢٧٦٥٤٣٢١٠&#10;• للتواصل واتساب: 01511223344" style="font-size: 14.5px; font-family: var(--font-code); line-height: 1.6; resize: vertical;"></textarea>
+                  <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 6px;">
+                    💡 يدعم الفلترة الذكية حتى لو كان الرقم مدمجاً في سياق رسالة كاملة.
+                  </div>
+                </div>
+
+                <!-- Client Name (Optional) -->
+                <div class="form-group" style="margin-bottom: 18px;">
+                  <label class="form-label" style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">
+                    👤 اسم العميل (اختياري):
+                  </label>
+                  <input type="text" id="wa-input-client-name" class="form-input" placeholder="مثال: أ/ أحمد السيد">
+                </div>
+
+                <!-- Pre-filled Message (Optional) -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 0;">
+                      💬 إرفاق نص رسالة جاهزة (اختياري):
+                    </label>
+                    <button type="button" id="btn-wa-clear-msg" style="background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; text-decoration: underline;">
+                      إفراغ الرسالة
+                    </button>
+                  </div>
+
+                  <!-- Quick Template Pills -->
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                    <button type="button" class="btn btn-secondary wa-msg-template-btn" data-tmpl="intro" style="font-size: 11px; padding: 4px 10px;">👋 تعارف صحفي</button>
+                    <button type="button" class="btn btn-secondary wa-msg-template-btn" data-tmpl="review" style="font-size: 11px; padding: 4px 10px;">📰 مراجعة خبر</button>
+                    <button type="button" class="btn btn-secondary wa-msg-template-btn" data-tmpl="welcome" style="font-size: 11px; padding: 4px 10px;">✨ ترحيب سريع</button>
+                  </div>
+
+                  <textarea id="wa-input-message" class="form-input" rows="3" placeholder="اتركه فارغاً لفتح محادثة مباشرة بدون رسالة، أو اكتب رسالتك هنا..." style="font-size: 13px; resize: vertical;"></textarea>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" id="btn-wa-generate" class="btn btn-block" style="background: #25D366; color: #051B11; font-weight: 800; font-size: 15px; height: 48px; border-radius: 10px; box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <span>⚡</span>
+                  <span>تنظيم الرقم وتوليد رابط الواتساب</span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Right Column: Result Output -->
+            <div>
+              <!-- Ready Result Card -->
+              <div id="wa-result-card" class="glass-card" style="display: none; padding: 24px; border: 1.5px solid #25D366; box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 25px rgba(37, 211, 102, 0.2); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">✅</span>
+                    <span style="font-size: 16px; font-weight: 800; color: #25D366;">تم تجهيز الرابط بنجاح!</span>
+                  </div>
+                  <span id="wa-badge-operator" class="badge" style="font-size: 12px; font-weight: 700; padding: 4px 10px;">...</span>
+                </div>
+
+                <!-- Big Direct Actions -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+                  <a id="wa-btn-open-chat" href="#" target="_blank" class="btn" style="background: #25D366; color: #051B11; font-weight: 800; font-size: 14px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 10px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
+                    <span>📲</span>
+                    <span>فتح المحادثة فوراً</span>
+                  </a>
+                  <button type="button" id="wa-btn-copy-link" class="btn btn-gold" style="font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 10px;">
+                    <span>📋</span>
+                    <span>نسخ الرابط المباشر</span>
+                  </button>
+                </div>
+
+                <!-- Link Display Input with Copy -->
+                <div class="form-group" style="margin-bottom: 18px;">
+                  <label class="form-label" style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">🔗 رابط wa.me المباشر:</label>
+                  <div style="display: flex; gap: 6px;">
+                    <input type="text" id="wa-display-link" class="form-input" readonly style="font-family: var(--font-code); font-size: 13.5px; direction: ltr; text-align: left; background: rgba(0,0,0,0.35); font-weight: 700; color: var(--accent-gold);">
+                    <button type="button" id="wa-btn-copy-inline" class="btn btn-secondary" style="padding: 0 14px; font-size: 13px;" title="نسخ">📋</button>
+                  </div>
+                </div>
+
+                <!-- 4 Details Grid Cards -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">الرقم المحلي المنظم</div>
+                    <div id="wa-res-local-phone" style="font-size: 14px; font-weight: 800; color: var(--text-primary); font-family: var(--font-code);">--</div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">الرقم الدولي القياسي</div>
+                    <div id="wa-res-intl-phone" style="font-size: 14px; font-weight: 800; color: var(--accent-gold); font-family: var(--font-code);">--</div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">شبكة الاتصال</div>
+                    <div id="wa-res-operator-name" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">--</div>
+                  </div>
+                  <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">الدولة</div>
+                    <div id="wa-res-country" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">--</div>
+                  </div>
+                </div>
+
+                <!-- Message Preview (if any) -->
+                <div id="wa-msg-preview-box" style="display: none; background: rgba(37, 211, 102, 0.06); border: 1px dashed rgba(37, 211, 102, 0.3); border-radius: 8px; padding: 10px 12px; margin-top: 10px;">
+                  <div style="font-size: 11px; color: #25D366; font-weight: 700; margin-bottom: 4px;">💬 نص الرسالة المرفقة بالرابط:</div>
+                  <div id="wa-msg-preview-text" style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap;"></div>
+                </div>
+              </div>
+
+              <!-- Placeholder when no result yet -->
+              <div id="wa-placeholder-card" class="glass-card" style="text-align: center; padding: 50px 24px; border: 1px dashed var(--border-subtle);">
+                <div style="font-size: 52px; margin-bottom: 12px; opacity: 0.6;">💬</div>
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px;">في انتظار إدخال الرقم</h4>
+                <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 320px; margin: 0 auto;">
+                  بمجرد كتابة أو لصق الرقم على اليمين، سيظهر الرابط المنظم هنا مباشرة مع خيارات الفتح والنسخ.
+                </p>
+              </div>
+
+              <!-- Recent Numbers List (Session history) -->
+              <div class="glass-card" style="margin-top: 20px; padding: 18px 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                    <span>🕒</span>
+                    <span>الأرقام المنظمة مؤخراً (في هذه الجلسة)</span>
+                  </span>
+                  <button type="button" id="btn-wa-clear-history" style="background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: underline;">مسح السجل</button>
+                </div>
+                <div id="wa-recent-list" style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px;">لا توجد أرقام منظمة بعد في هذه الجلسة.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             VIEW: SMART SURGICAL ARTICLE EDITOR (GEMINI)
+             =================================================================== -->
+        <section id="view-smart-editor" class="view-section">
+          
+          <!-- Top Hero Banner -->
+          <div class="glass-card" style="margin-bottom: 22px; padding: 24px 26px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(245, 158, 11, 0.06) 50%, rgba(18, 24, 38, 0.95) 100%); border: 1.5px solid rgba(59, 130, 246, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span style="font-size: 30px;">✍️</span>
+                  <h2 style="font-size: 21px; font-weight: 800; color: #60A5FA; margin: 0;">المعدّل الصحفي الذكي — تطبيق تعديلات العملاء جراحياً (Gemini)</h2>
+                  <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.4); font-size: 11px; padding: 3px 8px;">تعديل موضعي دقيق ⚡</span>
+                </div>
+                <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0; line-height: 1.6; max-width: 750px;">
+                  ألصق رابط المقال المنشور (سواء من الريفيو أو الجريدة الرئيسية)، والصق كلام العميل وملاحظاته كما أرسلها بالعامية أو الفصحى.<br>
+                  يقوم الذكاء الاصطناعي <strong>Gemini</strong> بتعديل واستبدال ما طلبه العميل فقط جراحياً، مع الحفاظ الصارم على باقي المقال والمقدمة الرسمية وتحديث الخبر فوراً.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 12px; padding: 6px 14px; font-weight: 700;">
+                  🛡️ الحفاظ التام على المقال وفاصل (..)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Grid -->
+          <div style="display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 950px; margin: 0 auto;">
+            
+            <!-- Step 1: Input Form Card -->
+            <div class="glass-card" style="padding: 26px;">
+              <form id="form-smart-edit">
+                
+                <!-- URL Input + Fetch Button -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label class="form-label" style="font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span>🔗</span>
+                      <span>رابط المقال المنشور (ريفيو أو الجريدة الأصلية)</span>
+                      <span style="color: #EF4444;">*</span>
+                    </span>
+                    <span style="font-size: 11.5px; color: var(--text-muted); font-family: var(--font-code);">review.tahteldoo.com / tahteldoo.com</span>
+                  </label>
+                  <div style="display: flex; gap: 10px;">
+                    <input type="url" id="smart-edit-url" class="form-input" placeholder="https://review.tahteldoo.com/2026/10/example-article.html" required style="font-family: var(--font-code); font-size: 14px; direction: ltr; text-align: left; padding: 12px 14px;">
+                    <button type="button" id="btn-smart-edit-fetch" class="btn btn-secondary" style="white-space: nowrap; padding: 0 22px; font-weight: 700;">
+                      <span id="smart-edit-fetch-text">جلب الخبر 🔍</span>
+                      <span id="smart-edit-fetch-spinner" class="spinner" style="display: none; width: 16px; height: 16px;"></span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Article Preview Badge (Shown after fetch) -->
+                <div id="smart-edit-post-preview" style="display: none; background: rgba(59, 130, 246, 0.08); border: 1.5px dashed rgba(59, 130, 246, 0.4); border-radius: 12px; padding: 18px; margin-bottom: 22px; animation: modalFadeIn 0.25s ease-out;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span id="smart-edit-preview-badge" class="badge badge-gold">...</span>
+                      <span id="smart-edit-preview-id" style="font-family: var(--font-code); font-size: 12px; color: var(--text-muted);">ID: ...</span>
+                    </div>
+                    <a id="smart-edit-preview-link" href="#" target="_blank" class="btn btn-secondary" style="font-size: 11.5px; padding: 4px 12px;">
+                      🔗 معاينة المقال الحالي
+                    </a>
+                  </div>
+                  <div id="smart-edit-preview-title" style="font-size: 15.5px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">...</div>
+                  <div id="smart-edit-preview-snippet" style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">...</div>
+                </div>
+
+                <!-- Client Notes / Copy-Paste -->
+                <div class="form-group" style="margin-bottom: 22px;">
+                  <label class="form-label" style="font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                      <span>💬</span>
+                      <span>ملاحظات وتعديلات العميل (انسخ رسالة الواتساب والصقها هنا كما هي)</span>
+                      <span style="color: #EF4444;">*</span>
+                    </span>
+                    <span style="font-size: 11.5px; color: var(--accent-gold);">💡 يقبل أي لهجة عامية أو صياغة عفوية</span>
+                  </label>
+                  <textarea id="smart-edit-notes" class="form-input" rows="6" placeholder="الصق هنا رسالة العميل بالكامل نسخ/لصق...&#10;مثال: شيل رقم التليفون القديم وحط رقم الواتساب الجديد 01012345678، واكتب استشاري أمراض الباطنة بدل أخصائي، وضفنا عنوان فرع المهندسين شارع شهاب..." required style="font-size: 14px; line-height: 1.6; resize: vertical; padding: 14px;"></textarea>
+                </div>
+
+                <!-- Options -->
+                <div style="background: var(--bg-surface-2); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border-subtle);">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600;">
+                    <input type="checkbox" id="smart-edit-auto-publish" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);">
+                    <span>تحديث ورفع فوري على الموقع مباشرة مكانه دون تغيير الرابط 🚀</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; font-weight: 600;">
+                    <input type="checkbox" id="smart-edit-sync-both" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);">
+                    <span>تحديث المقال في الموقعين بالتزامن إذا كان منشوراً في الريفيو والرئيسي معاً 🔄</span>
+                  </label>
+                </div>
+
+                <!-- Action Button -->
+                <button type="submit" id="btn-smart-edit-submit" class="btn btn-gold btn-block" style="height: 52px; font-size: 15.5px; font-weight: 800; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); border-radius: 10px;">
+                  <span id="smart-edit-submit-text">تنفيذ التعديل الجراحي وتحديث الخبر عبر Gemini 🤖</span>
+                  <span id="smart-edit-submit-spinner" class="spinner" style="display: none; width: 18px; height: 18px; margin-right: 8px;"></span>
+                </button>
+              </form>
+            </div>
+
+            <!-- Result Card (Shown after execution) -->
+            <div id="smart-edit-result-card" class="glass-card" style="display: none; padding: 26px; border: 1.5px solid #10B981; animation: modalFadeIn 0.3s ease-out; box-shadow: 0 10px 40px rgba(16, 185, 129, 0.15);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 34px;">🎉</span>
+                  <div>
+                    <h3 style="color: #10B981; font-size: 19px; font-weight: 800; margin: 0;">تم تعديل وتحديث الخبر بنجاح!</h3>
+                    <p id="smart-edit-engine-badge" style="font-size: 12.5px; color: var(--text-muted); margin: 3px 0 0 0;">المحرك: Gemini</p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <a id="smart-edit-res-open-link" href="#" target="_blank" class="btn btn-gold" style="font-weight: 700; padding: 9px 20px; font-size: 13.5px;">
+                    🔗 فتح المقال المحدث على الموقع
+                  </a>
+                  <button type="button" id="btn-smart-edit-copy-link" class="btn btn-secondary" style="font-weight: 700; padding: 9px 16px; font-size: 13.5px;">
+                    📋 نسخ الرابط
+                  </button>
+                </div>
+              </div>
+
+              <!-- Changes Summary Box -->
+              <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 18px 22px; margin-bottom: 18px;">
+                <div style="font-size: 14px; font-weight: 800; color: #10B981; margin-bottom: 10px;">
+                  📋 تقرير ما تم تعديله بالضبط بواسطة الذكاء الاصطناعي:
+                </div>
+                <div id="smart-edit-res-summary" style="font-size: 13.5px; color: var(--text-primary); line-height: 1.7; white-space: pre-line;">
+                  ...
+                </div>
+              </div>
+
+              <!-- Title Update Comparison -->
+              <div style="background: var(--bg-surface-2); border-radius: 12px; padding: 14px 18px; margin-bottom: 18px; border: 1px solid var(--border-subtle);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">📌 عنوان المقال النهائي:</div>
+                <div id="smart-edit-res-new-title" style="font-size: 15.5px; font-weight: 800; color: var(--accent-gold);">...</div>
+              </div>
+
+              <!-- Content Preview Accordion -->
+              <details style="background: rgba(0,0,0,0.25); border-radius: 10px; padding: 14px 18px; border: 1px solid var(--border-subtle);">
+                <summary style="cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--text-muted);">
+                  👁️ استعراض المحتوى الكامل بعد التعديل (HTML)
+                </summary>
+                <div id="smart-edit-res-content-html" style="margin-top: 14px; max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.7; color: var(--text-secondary); border-top: 1px solid var(--border-subtle); padding-top: 14px;">
+                </div>
+              </details>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===================================================================
+             VIEW: ACCREDIT & PROMOTE ARTICLE (اعتماد الخبر)
+             =================================================================== -->
+        <section id="view-promote-tool" class="view-section">
+          
+          <!-- Top Hero Banner -->
+          <div class="glass-card" style="margin-bottom: 22px; padding: 24px 26px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(18, 24, 38, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span style="font-size: 30px;">✅</span>
+                  <h2 style="font-size: 21px; font-weight: 800; color: var(--accent-gold); margin: 0;">اعتماد الخبر ونقله للجريدة الأساسية</h2>
+                  <span class="badge badge-gold" style="font-size: 11px; padding: 3px 8px;">اعتماد ونشر فوري ⚡</span>
+                </div>
+                <p style="font-size: 13.5px; color: var(--text-secondary); margin: 0; line-height: 1.6; max-width: 680px;">
+                  ألصق رابط الخبر المنشور على جريدة الريفيو (<code>review.tahteldoo.com</code>)، وسيقوم النظام فوراً بنقله واعتماده وتسجيل بياناته في المنظومة على الجريدة الأساسية الرسمية (<code>www.tahteldoo.com</code>).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style="max-width: 850px; margin: 0 auto;">
+            <!-- Form Card -->
+            <div class="glass-card" style="padding: 28px; margin-bottom: 22px;">
+              <form id="form-promote-review" onsubmit="event.preventDefault(); executePromoteReviewArticle();">
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label class="form-label" style="font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: block;">
+                    🔗 رابط خبر الريفيو المراد اعتماده (Review Link):
+                  </label>
+                  <div style="display: flex; gap: 10px;">
+                    <input type="url" id="promote-input-url" class="form-input" placeholder="مثال: https://review.tahteldoo.com/2026/09/blog-post_100.html" required style="font-size: 14.5px; font-family: var(--font-code); direction: ltr; text-align: left;" />
+                    <button type="button" id="btn-promote-paste" class="btn btn-secondary" style="white-space: nowrap; padding: 0 16px;">
+                      <span>📋 لصق</span>
+                    </button>
+                  </div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">
+                    💡 يدعم أي رابط ينتمي لجريدة الريفيو سواء بنطاق <code>review.tahteldoo.com</code> أو روابط blogspot.
+                  </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                  <button type="button" id="btn-promote-clear" class="btn btn-secondary" style="padding: 12px 20px;">
+                    <span>🧹 إفراغ</span>
+                  </button>
+                  <button type="submit" id="btn-promote-submit" class="btn btn-primary" style="padding: 12px 28px; font-size: 14.5px; font-weight: 800; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                    <span id="promote-btn-icon">✅</span>
+                    <span id="promote-btn-text">اعتماد ونقل الخبر 🚀</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Workflow Container (hidden by default) -->
+            <div id="promote-workflow-container" style="display: none; margin-bottom: 24px;">
+
+              <!-- Loading Card for Step 1 (Publishing & Saving Data) -->
+              <div id="promote-step1-loading-card" class="glass-card" style="display: none; text-align: center; padding: 36px 20px; margin-bottom: 20px; border: 1.5px solid rgba(245, 158, 11, 0.4);">
+                <div class="spinner" style="width: 44px; height: 44px; margin: 0 auto 16px; border: 4px solid rgba(245, 158, 11, 0.2); border-top-color: #F59E0B; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                <h3 style="font-size: 16.5px; font-weight: 800; color: var(--accent-gold); margin-bottom: 6px;">جاري اعتماد ونقل الخبر وتسجيل البيانات...</h3>
+                <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">يتم سحب المقال بالكامل من الريفيو ونشره على النطاق الأساسي الرسمي وحفظ بيانات العميل والخبر في المنظومة 🌐</p>
+              </div>
+
+              <!-- Distinctive Publication Celebration Card -->
+              <div id="promote-published-card" class="glass-card" style="display: none; padding: 26px 28px; margin-bottom: 22px; border: 2px solid rgba(16, 185, 129, 0.65); background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(18, 24, 38, 0.95) 100%); box-shadow: 0 12px 35px rgba(16, 185, 129, 0.2); animation: fadeInUp 0.4s ease;">
+                <!-- Header with Pulse Beacon -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; border-bottom: 1px solid rgba(16, 185, 129, 0.25); padding-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: center; font-size: 26px; border: 1.5px solid rgba(16, 185, 129, 0.5); box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);">
+                      🎉
+                    </div>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <h3 style="font-size: 19px; font-weight: 900; color: #10B981; margin: 0;">تم اعتماد ونشر الخبر وتسجيل البيانات بنجاح!</h3>
+                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #10B981; background: rgba(16, 185, 129, 0.18); padding: 4px 11px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.45); box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);">
+                          <span style="width: 9px; height: 9px; border-radius: 50%; background: #10B981; display: inline-block; box-shadow: 0 0 8px #10B981;"></span>
+                          مباشر ومتاح الآن للقراء (Live)
+                        </span>
+                      </div>
+                      <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">تم نقل المقال رسمياً إلى النطاق الأساسي لجريدة تحت الضوء الإخبارية وتسجيل بياناته في النظام.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Article Title -->
+                <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 10px; padding: 14px 18px; margin-bottom: 18px;">
+                  <div style="font-size: 12px; color: var(--accent-gold); font-weight: 700; margin-bottom: 4px;">📰 عنوان المقال المنشور رسمياً:</div>
+                  <div id="promote-res-title" style="font-size: 16px; font-weight: 800; color: #FFFFFF; line-height: 1.6;">--</div>
+                </div>
+
+                <!-- Article URL & Action Buttons -->
+                <div>
+                  <label class="form-label" style="font-size: 13.5px; font-weight: 800; color: #10B981; margin-bottom: 8px; display: block;">
+                    🌐 الرابط الرسمي المعتمد في الجريدة الأساسية:
+                  </label>
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="promote-res-url" class="form-input" readonly style="flex: 1; min-width: 260px; font-size: 14px; font-family: var(--font-code); color: #10B981; background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.4); direction: ltr; text-align: left; font-weight: 600;" />
+                    <button type="button" id="btn-promote-copy-url" class="btn btn-secondary" style="white-space: nowrap; padding: 0 18px; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
+                      <span>📋</span>
+                      <span>نسخ الرابط</span>
+                    </button>
+                    <a id="btn-promote-open-url" href="#" target="_blank" rel="noopener noreferrer" class="btn" style="white-space: nowrap; padding: 0 22px; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #FFFFFF; text-decoration: none; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); font-size: 14px;">
+                      <span>🌐</span>
+                      <span>فتح وقراءة الخبر بالجريدة ↗</span>
+                    </a>
+                    <button type="button" id="btn-promote-another" class="btn btn-secondary" style="white-space: nowrap; padding: 0 18px; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
+                      <span>🔄</span>
+                      <span>اعتماد خبر آخر</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </section>
 
@@ -684,7 +1495,7 @@
           <!-- ===================================================================
                ADMIN MASTER FINANCIAL VAULT (CHIEF EDITOR EXCLUSIVE)
                =================================================================== -->
-          <div id="admin-accounting-vault" class="admin-only" style="margin-top: 30px;">
+          <div id="admin-accounting-vault" class="admin-only super-admin-only" style="margin-top: 30px;">
             <div class="glass-card" style="border: 1.5px solid var(--accent-gold); margin-bottom: 22px;">
               <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="display: flex; align-items: center; gap: 8px;">
@@ -979,7 +1790,7 @@
                 </div>
                 <div
                   style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
-                  <span style="color: var(--text-secondary);">الربط بمدونة Blogger:</span>
+                  <span style="color: var(--text-secondary);">الربط بموقع ووردبريس:</span>
                   <span style="color: #10B981; font-weight: 600;">✅ متصل بالـ Central Hub</span>
                 </div>
                 <div
@@ -1188,10 +1999,727 @@
         </section>
 
         <!-- ===================================================================
-             VIEW 6: SETTINGS & BLOGGER POOL
+             CUSTOMER LEADS VIEW (CHIEF EDITOR EXCLUSIVE CRM)
+             =================================================================== -->
+        <!-- ===================================================================
+             CUSTOMER LEADS VIEW (CHIEF EDITOR EXCLUSIVE CRM)
+             =================================================================== -->
+        <section id="view-customer-leads" class="view-section admin-only" style="display: none;">
+          <!-- Luxury Hero Header -->
+          <div class="crm-header-card">
+            <div class="crm-header-content">
+              <div class="crm-hero-icon-box">
+                👑
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <h2 class="crm-title">منظومة عملاء النخبة (VIP CRM)</h2>
+                  <span class="crm-badge-chief">حصري لرئيس التحرير 🔒</span>
+                </div>
+                <p class="crm-desc">
+                  استخبارات تسويقية ذكية تستخلص تلقائياً بيانات الشخصيات والجهات المعلنة فور اعتماد المقالات لبناء شبكة علاقات واستقطاب عقود إعلانية مستدامة.
+                </p>
+              </div>
+            </div>
+            <div class="crm-header-actions">
+              <button class="btn-crm-export" id="btn-export-customer-leads" title="تصدير جدول العملاء بالكامل إلى ملف Excel / CSV">
+                <span style="font-size: 15px;">📊</span>
+                <span>تصدير Excel / CSV</span>
+              </button>
+              <button class="btn-crm-refresh" id="btn-refresh-customer-leads" title="تحديث وتنشيط بيانات العملاء">
+                <span style="font-size: 14px;">🔄</span>
+                <span>تحديث البيانات</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Executive HUD Metric Tiles -->
+          <div class="crm-stats-grid">
+            <div class="crm-stat-tile gold">
+              <div class="crm-stat-icon-wrapper">👥</div>
+              <div class="crm-stat-meta">
+                <span class="crm-stat-title">إجمالي العملاء المستهدفين</span>
+                <span class="crm-stat-sub">مستخرجين من المقالات المعتمدة</span>
+              </div>
+              <div id="stat-total-leads" class="crm-stat-value">0</div>
+            </div>
+
+            <div class="crm-stat-tile emerald">
+              <div class="crm-stat-icon-wrapper">📱</div>
+              <div class="crm-stat-meta">
+                <span class="crm-stat-title">هواتف موثقة وجاهزة</span>
+                <span class="crm-stat-sub">جاهز للتواصل الفوري والمباشر</span>
+              </div>
+              <div id="stat-verified-leads" class="crm-stat-value">0</div>
+            </div>
+
+            <div class="crm-stat-tile blue">
+              <div class="crm-stat-icon-wrapper">🏷️</div>
+              <div class="crm-stat-meta">
+                <span class="crm-stat-title">القطاعات والتخصصات</span>
+                <span class="crm-stat-sub">قانونية، عقارية، طبية، ومهنية</span>
+              </div>
+              <div id="stat-categories-count" class="crm-stat-value">0</div>
+            </div>
+
+            <div class="crm-stat-tile purple">
+              <div class="crm-stat-icon-wrapper">⭐</div>
+              <div class="crm-stat-meta">
+                <span class="crm-stat-title">عملاء VIP والمتابعة</span>
+                <span class="crm-stat-sub">شراكات وعقود جارية ومستهدفة</span>
+              </div>
+              <div id="stat-vip-leads" class="crm-stat-value">0</div>
+            </div>
+          </div>
+
+          <!-- Chief Editor Quick Article Lead Extractor Card -->
+          <div class="crm-url-extractor-card" style="background: linear-gradient(135deg, rgba(20, 24, 38, 0.95), rgba(12, 15, 26, 0.98)); border: 1px solid rgba(217, 119, 6, 0.35); border-radius: 14px; padding: 18px 22px; margin-bottom: 20px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35); backdrop-filter: blur(12px);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(217, 119, 6, 0.15); border: 1px solid rgba(217, 119, 6, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                  ⚡
+                </div>
+                <div>
+                  <h3 style="font-size: 15px; font-weight: 700; color: #F59E0B; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    استخراج وسحب عميل جديد من رابط خبر بالجريدة
+                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3);">سحب فوري وذكي</span>
+                  </h3>
+                  <p style="font-size: 12px; color: var(--text-muted); margin: 3px 0 0 0;">
+                    ضع رابط أي خبر منشور في الجريدة الرئيسية لاستخلاص اسم العميل، الهاتف، التصنيف، والنشاط تلقائياً وإضافته لقاعدة البيانات.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 280px; position: relative;">
+                <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; opacity: 0.7;">🔗</span>
+                <input type="url" id="input-extract-lead-url" placeholder="ضع رابط الخبر هنا (مثال: https://tahteldoo.blogspot.com/... أو https://tahteldoo.com/...)" style="width: 100%; padding: 12px 42px 12px 14px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(10, 14, 26, 0.85); color: #fff; font-size: 13.5px; font-family: var(--font-main); transition: all 0.25s;" onfocus="this.style.borderColor='#F59E0B'; this.style.boxShadow='0 0 12px rgba(245, 158, 11, 0.25)';" onblur="this.style.borderColor='rgba(255, 255, 255, 0.15)'; this.style.boxShadow='none';">
+              </div>
+              <button id="btn-extract-lead-from-url" type="button" style="padding: 12px 22px; border-radius: 10px; border: none; background: linear-gradient(135deg, #D97706, #B45309); color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35); transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 18px rgba(217, 119, 6, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(217, 119, 6, 0.35)';">
+                <span>⚡</span>
+                <span id="btn-extract-lead-text">سحب بيانات العميل الآن</span>
+              </button>
+            </div>
+
+            <!-- Mini Live Result Banner (Hidden by default, shown after extraction) -->
+            <div id="extract-lead-result-banner" style="display: none; margin-top: 14px; padding: 12px 16px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 22px;">🎉</span>
+                <div>
+                  <div id="extract-lead-result-title" style="font-size: 13.5px; font-weight: 700; color: #10B981;">تم استخراج بيانات العميل بنجاح!</div>
+                  <div id="extract-lead-result-sub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;"></div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btn-extract-lead-dismiss" style="padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: transparent; color: var(--text-muted); font-size: 12px; cursor: pointer;">إغلاق</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating Smart Control Dock -->
+          <div class="crm-dock-card">
+            <div class="crm-dock-row">
+              <div class="crm-search-box">
+                <span class="crm-search-icon">🔍</span>
+                <input type="text" id="filter-lead-search" class="crm-search-input" placeholder="ابحث باسم العميل، رقم الهاتف، الصحفي المعتمد، أو موضوع الخبر...">
+              </div>
+              <select id="filter-lead-category" class="crm-dock-select" style="min-width: 200px;">
+                <option value="الكل">🏢 جميع القطاعات والتصنيفات</option>
+              </select>
+              <select id="filter-lead-status" class="crm-dock-select" style="min-width: 170px;">
+                <option value="الكل">🎯 كل حالات التواصل</option>
+                <option value="NEW">✨ عميل جديد</option>
+                <option value="CONTACTED">📞 تم التواصل</option>
+                <option value="VIP">⭐ عميل VIP دائم</option>
+                <option value="NOT_INTERESTED">⛔ غير مهتم حالياً</option>
+              </select>
+            </div>
+
+            <!-- Quick Status Filter Pills -->
+            <div class="crm-status-pills">
+              <button type="button" class="crm-status-pill active" data-status="الكل">
+                <span>🌐 الكل</span>
+                <span id="pill-count-all" class="crm-pill-badge">0</span>
+              </button>
+              <button type="button" class="crm-status-pill" data-status="NEW">
+                <span>✨ عميل جديد</span>
+                <span id="pill-count-new" class="crm-pill-badge">0</span>
+              </button>
+              <button type="button" class="crm-status-pill" data-status="CONTACTED">
+                <span>📞 تم التواصل</span>
+                <span id="pill-count-contacted" class="crm-pill-badge">0</span>
+              </button>
+              <button type="button" class="crm-status-pill" data-status="VIP">
+                <span>⭐ عميل VIP</span>
+                <span id="pill-count-vip" class="crm-pill-badge">0</span>
+              </button>
+              <button type="button" class="crm-status-pill" data-status="NOT_INTERESTED">
+                <span>⛔ غير مهتم</span>
+                <span id="pill-count-not-interested" class="crm-pill-badge">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Luxury VIP Client Table -->
+          <div class="crm-table-card">
+            <div class="table-responsive" style="border-radius: 12px; overflow-x: auto;">
+              <table class="crm-table" id="customer-leads-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px; text-align: center;">#</th>
+                    <th style="min-width: 230px;">العميل المستهدف</th>
+                    <th style="min-width: 230px;">قنوات التواصل المباشر</th>
+                    <th style="min-width: 140px;">القطاع المهني</th>
+                    <th style="min-width: 250px;">الخبر الصحفي المعتمد</th>
+                    <th style="min-width: 130px;">اعتماد بواسطة</th>
+                    <th style="min-width: 180px;">حالة المتابعة والملاحظات</th>
+                    <th style="width: 70px; text-align: center;">حذف</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-leads-tbody">
+                  <tr>
+                    <td colspan="8" style="text-align: center; padding: 45px; color: var(--text-muted);">
+                      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <span style="font-size: 28px; animation: pulse 1.5s infinite;">⏳</span>
+                        <span style="font-size: 14px; font-weight: 600;">جاري تحميل قاعدة بيانات عملاء النخبة...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Sleek Pagination Bar -->
+            <div id="customer-leads-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 13px; flex-wrap: wrap; gap: 12px;">
+              <span id="customer-leads-count-info" style="color: var(--text-muted); font-weight: 600;"></span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn btn-secondary" id="btn-lead-prev" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;">السابق ‹</button>
+                <span id="customer-leads-page-display" style="padding: 6px 12px; font-weight: 800; background: rgba(245, 158, 11, 0.12); color: var(--accent-gold); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px;">1</span>
+                <button class="btn btn-secondary" id="btn-lead-next" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;">› التالي</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Executive Notes Modal Window -->
+        <div id="modal-crm-notes" class="crm-modal-overlay">
+          <div class="crm-modal-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 22px;">📝</span>
+                <div>
+                  <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #FFFFFF;">سجل ملاحظات رئيس التحرير</h3>
+                  <span id="modal-notes-client-name" style="font-size: 12px; color: var(--accent-gold); font-weight: 600;"></span>
+                </div>
+              </div>
+              <button type="button" onclick="closeLeadNotesModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">وسوم ملاحظة سريعة جاهزة للتعيين بنقرة واحدة:</label>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;" onclick="appendQuickTag('🏷️ مهتم بالإعلان والتجديد')">🏷️ مهتم بالإعلان</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;" onclick="appendQuickTag('📞 مطلوب اتصال عاجل')">📞 اتصال عاجل</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;" onclick="appendQuickTag('⭐ عميل VIP مميز')">⭐ عميل VIP</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;" onclick="appendQuickTag('💰 باقة إعلانية مقترحة')">💰 باقة مقترحة</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 6px;" onclick="appendQuickTag('⛔ طلب عدم التواصل')">⛔ عدم التواصل</button>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+              <label for="modal-lead-notes-input" style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">الملاحظات التفصيلية وتاريخ التواصل:</label>
+              <textarea id="modal-lead-notes-input" rows="4" style="width: 100%; box-sizing: border-box; background: rgba(10, 14, 24, 0.95); border: 1.5px solid rgba(255, 255, 255, 0.15); border-radius: 10px; color: #FFFFFF; padding: 12px; font-size: 13px; font-family: var(--font-main); resize: vertical;" placeholder="اكتب أي تفاصيل بخصوص تفاوض الإعلانات أو اهتمامات العميل..."></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="btn btn-secondary" onclick="closeLeadNotesModal()" style="padding: 8px 16px; font-size: 12.5px; border-radius: 8px;">إلغاء</button>
+              <button type="button" class="btn btn-primary" onclick="saveLeadNotesModal()" style="padding: 8px 20px; font-size: 12.5px; font-weight: 700; border-radius: 8px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">💾 حفظ الملاحظات</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             VIEW: FACEBOOK COMMAND CENTER & COMMERCIAL HUB
+             =================================================================== -->
+        <section id="view-facebook-hub" class="view-section admin-only" style="display: none;">
+          <!-- Facebook Hero Header Card -->
+          <div class="fb-hub-header-card">
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+              <div class="fb-hero-icon-box">
+                📘
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <h2 style="font-size: 21px; font-weight: 800; color: #FFFFFF; margin: 0;">مركز قيادة وإدارة فيسبوك (Facebook Command Center)</h2>
+                  <span id="fb-connection-chip" class="fb-badge-live">متصل بـ صفحة تحت الضوء</span>
+                  <span id="fb-followers-chip" class="badge" style="background: rgba(24, 119, 242, 0.2); color: #60A5FA; border: 1px solid rgba(24, 119, 242, 0.4); font-size: 11px; font-weight: 800;">11,657 متابع</span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin: 6px 0 0 0; line-height: 1.6;">
+                  متابعة المنشورات والتحصيل المالي للإعلانات التجارية، ورصد تفاعل ورؤى الصفحة لحظياً مع النشر الفوري المباشر.
+                </p>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="btn-fb-sync" class="btn btn-secondary" style="padding: 10px 18px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <span id="fb-sync-icon">🔄</span>
+                <span>مزامنة التفاعل الحي</span>
+              </button>
+              <button type="button" id="btn-fb-toggle-create" class="btn btn-primary" style="padding: 10px 22px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #1877F2 0%, #0D5BB5 100%); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4);">
+                <span>➕</span>
+                <span>نشر مباشر على الصفحة</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Executive KPI Cards Grid -->
+          <div class="fb-stats-grid">
+            <div class="fb-stat-tile blue">
+              <div class="fb-stat-header">
+                <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">جمهور ومتابعي الصفحة</span>
+                <div class="fb-stat-icon-wrapper">👥</div>
+              </div>
+              <div id="fb-stat-followers" class="fb-stat-value">11,657</div>
+              <div class="fb-stat-sub">متابع رسمي على صفحة فيسبوك</div>
+            </div>
+
+            <div class="fb-stat-tile emerald">
+              <div class="fb-stat-header">
+                <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">إعلانات محصّلة ومسددة 💰</span>
+                <div class="fb-stat-icon-wrapper">💵</div>
+              </div>
+              <div id="fb-stat-paid" class="fb-stat-value">0 ج.م</div>
+              <div id="fb-stat-paid-count" class="fb-stat-sub">0 منشور مسدد بالكامل</div>
+            </div>
+
+            <div class="fb-stat-tile amber">
+              <div class="fb-stat-header">
+                <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">إعلانات معلقة للتحصيل ⏳</span>
+                <div class="fb-stat-icon-wrapper">⏳</div>
+              </div>
+              <div id="fb-stat-unpaid" class="fb-stat-value">0 ج.م</div>
+              <div id="fb-stat-unpaid-count" class="fb-stat-sub">0 منشور بانتظار السداد</div>
+            </div>
+
+            <div class="fb-stat-tile purple">
+              <div class="fb-stat-header">
+                <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary);">إجمالي التفاعل الحي</span>
+                <div class="fb-stat-icon-wrapper">🔥</div>
+              </div>
+              <div id="fb-stat-engagement" class="fb-stat-value">0</div>
+              <div id="fb-stat-engagement-breakdown" class="fb-stat-sub">0 إعجاب • 0 تعليق • 0 مشاركة</div>
+            </div>
+          </div>
+
+          <!-- Fast Quick Direct Publish Box (Collapsible / Toggleable) -->
+          <div id="fb-quick-publish-box" class="glass-card" style="display: none; padding: 24px; margin-bottom: 22px; border: 1.5px solid rgba(24, 119, 242, 0.45); background: linear-gradient(135deg, rgba(20, 26, 42, 0.95) 0%, rgba(13, 17, 28, 0.98) 100%); animation: fadeIn 0.3s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
+              <h3 style="font-size: 16.5px; font-weight: 800; color: #60A5FA; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span>✍️</span>
+                <span>إنشاء ونشر منشور فوري على صفحة فيسبوك</span>
+              </h3>
+              <button type="button" class="btn btn-secondary" onclick="toggleFbQuickPublish(false)" style="font-size: 12px; padding: 4px 10px;">إغلاق ✕</button>
+            </div>
+
+            <form id="form-fb-quick-publish" onsubmit="event.preventDefault(); executeFbQuickPublish();">
+              <div style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <label class="form-label" style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">📝 نص المنشور:</label>
+                  <textarea id="fb-quick-message" rows="4" class="form-input" style="font-size: 13.5px; line-height: 1.6;" placeholder="اكتب نص المنشور هنا..." required></textarea>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <label class="form-label" style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">🖼️ رابط صورة للمنشور (اختياري، يرفع التفاعل):</label>
+                  <input type="url" id="fb-quick-image" class="form-input" placeholder="https://i.ibb.co/..." style="font-size: 13px; direction: ltr; text-align: left;" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">🔗 رابط خارجي أو رابط المقال (اختياري):</label>
+                  <input type="url" id="fb-quick-link" class="form-input" placeholder="https://www.tahteldoo.com/..." style="font-size: 13px; direction: ltr; text-align: left;" />
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; background: rgba(0, 0, 0, 0.25); padding: 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06);">
+                <div>
+                  <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: var(--accent-gold); margin-bottom: 6px; display: block;">💰 الحالة المالية للمنشور:</label>
+                  <select id="fb-quick-payment-status" class="form-input" style="font-size: 13px; height: 40px;">
+                    <option value="EDITORIAL">📰 خبر تحريري عام (مجاني)</option>
+                    <option value="UNPAID">⏳ إعلان تجاري (معلق السداد)</option>
+                    <option value="PAID">💰 إعلان تجاري (مدفوع ومحصل)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">💵 القيمة (ج.م):</label>
+                  <input type="number" id="fb-quick-amount" class="form-input" placeholder="0.00" min="0" step="50" style="font-size: 13px; height: 40px;" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">👤 اسم العميل أو الجهة:</label>
+                  <input type="text" id="fb-quick-client" class="form-input" placeholder="مثال: مستشفى الصفوة / د. أحمد..." style="font-size: 13px; height: 40px;" />
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 12.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; display: block;">📝 ملاحظات السداد / الإيصال:</label>
+                  <input type="text" id="fb-quick-notes" class="form-input" placeholder="رقم إيصال أو تفاصيل..." style="font-size: 13px; height: 40px;" />
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" class="btn btn-secondary" onclick="toggleFbQuickPublish(false)" style="padding: 10px 20px;">إلغاء</button>
+                <button type="submit" id="btn-fb-submit-publish" class="btn btn-primary" style="padding: 10px 28px; font-size: 14px; font-weight: 800; background: linear-gradient(135deg, #1877F2 0%, #0D5BB5 100%);">
+                  <span>🚀 نشر المنشور على فيسبوك الآن</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filter Tabs & Search Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary fb-filter-btn active" data-fb-filter="ALL" onclick="filterFbPosts('ALL')">الكل 📑</button>
+              <button type="button" class="btn btn-secondary fb-filter-btn" data-fb-filter="PAID" onclick="filterFbPosts('PAID')" style="color: #34D399;">مدفوع ومحصل 💰</button>
+              <button type="button" class="btn btn-secondary fb-filter-btn" data-fb-filter="UNPAID" onclick="filterFbPosts('UNPAID')" style="color: #FBBF24;">معلق السداد ⏳</button>
+              <button type="button" class="btn btn-secondary fb-filter-btn" data-fb-filter="EDITORIAL" onclick="filterFbPosts('EDITORIAL')">أخبار عامة 📰</button>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; min-width: 280px;">
+              <input type="text" id="fb-posts-search" class="form-input" placeholder="🔍 بحث في المنشورات أو العملاء..." style="font-size: 13px; height: 38px;" oninput="debounceFbSearch()" />
+            </div>
+          </div>
+
+          <!-- Facebook Posts Table Card -->
+          <div class="fb-table-container">
+            <table class="fb-posts-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">الصورة</th>
+                  <th>مقتطف المنشور</th>
+                  <th>العميل / التصنيف</th>
+                  <th>الحالة المالية (انقر للتغيير)</th>
+                  <th>القيمة (ج.م)</th>
+                  <th>التفاعل الحي</th>
+                  <th>تاريخ النشر</th>
+                  <th style="width: 130px; text-align: center;">إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="fb-posts-tbody">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-muted);">
+                    <div class="spinner" style="width: 28px; height: 28px; margin: 0 auto 10px;"></div>
+                    جاري تحميل منشورات فيسبوك وبيانات التفاعل...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Info -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 4px; font-size: 13px; color: var(--text-muted);">
+            <div id="fb-posts-counter">عرض 0 منشور</div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="fb-btn-prev-page" class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px;" disabled onclick="changeFbPage(-1)">السابق</button>
+              <span id="fb-page-number" style="padding: 6px 12px; font-weight: 700; color: #fff;">1</span>
+              <button type="button" id="fb-btn-next-page" class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px;" disabled onclick="changeFbPage(1)">التالي</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fast Payment Status Update Modal -->
+        <div id="modal-edit-facebook-payment" class="crm-modal-overlay" style="display: none;">
+          <div class="crm-modal-box" style="border-color: rgba(24, 119, 242, 0.5);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 16.5px; font-weight: 800; color: #60A5FA; display: flex; align-items: center; gap: 8px;">
+                <span>💳</span>
+                <span>تحديث الحالة المالية للمنشور الإعلاني</span>
+              </h3>
+              <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="closeFbPaymentModal()">✕</button>
+            </div>
+
+            <input type="hidden" id="modal-fb-post-id" />
+
+            <div style="margin-bottom: 14px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">حالة السداد والتحصيل:</label>
+              <select id="modal-fb-status-select" class="form-input" style="font-size: 13.5px; height: 42px;">
+                <option value="PAID">💰 إعلان مدفوع ومحصل بالكامل</option>
+                <option value="UNPAID">⏳ إعلان تجاري معلق السداد (مطلوب تحصيله)</option>
+                <option value="EDITORIAL">📰 خبر تحريري عام (غير تجاري)</option>
+                <option value="FREE">🎁 إعلان مجاني / مجاملة</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">قيمة الإعلان بالجنيه المصري (EGP):</label>
+              <input type="number" id="modal-fb-amount-input" class="form-input" placeholder="0.00" min="0" step="50" style="font-size: 13.5px; height: 42px;" />
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-size: 12.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">ملاحظات الإيصال والسداد (رقم التحويل، الحساب، المحفظة):</label>
+              <textarea id="modal-fb-notes-input" rows="3" class="form-input" placeholder="مثال: تم التحويل فودافون كاش رقم الإيصال 9482..." style="font-size: 13px;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+              <button type="button" class="btn btn-secondary" onclick="closeFbPaymentModal()" style="padding: 9px 18px; font-size: 13px;">إلغاء</button>
+              <button type="button" class="btn btn-primary" onclick="saveFbPaymentModal()" style="padding: 9px 24px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #1877F2 0%, #0D5BB5 100%);">
+                <span>💾 حفظ التعديل المالي</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             VIEW: GEMINI FALLBACK MONITORING (CHIEF & DEPUTY EDITOR)
+             =================================================================== -->
+        <section id="view-gemini-fallback" class="view-section admin-only" style="display: none;">
+          <!-- Luxury Hero Header Card -->
+          <div class="glass-card" style="border: 1px solid rgba(96, 165, 250, 0.3); background: linear-gradient(135deg, rgba(30, 58, 138, 0.25) 0%, rgba(15, 23, 42, 0.6) 100%); margin-bottom: 22px; border-radius: 16px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div style="position: absolute; left: -20px; top: -20px; font-size: 120px; opacity: 0.05; pointer-events: none;">🛡️</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);">
+                  🛡️
+                </div>
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #FFFFFF;">غرفة مراقبة بدائل الذكاء الاصطناعي (Groq 120B ➔ Gemini)</h2>
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 11px; padding: 3px 8px;">👑 حصري لرئيس التحرير ونائبه</span>
+                  </div>
+                  <p style="margin: 4px 0 0 0; font-size: 12.5px; color: var(--text-muted);">
+                    نظام الحماية التلقائي ثلاثي الطبقات (Multi-Tier Resilient AI) — يتدخل البديل الأول Groq (openai/gpt-oss-120b) بسرعة خارقة، ويليه Google Gemini كخط دفاع ثانٍ عند حدوث أي ضغط على GLM.
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.35); padding: 6px 12px; font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px #10B981;"></span>
+                  منظومة الحماية نشطة وجاهزة (Standby)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Glowing HUD Metric Tiles -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 22px;">
+            <div class="glass-card" style="padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: rgba(15, 23, 42, 0.55);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">🛡️ إجمالي عمليات الإنقاذ</span>
+                <span style="font-size: 18px;">📈</span>
+              </div>
+              <div id="gemini-stat-total" style="font-size: 26px; font-weight: 900; color: #60A5FA; margin-top: 8px;">0</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">عمليات تم إنقاذها بنجاح عبر البدائل</div>
+            </div>
+
+            <div class="glass-card" style="padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: rgba(15, 23, 42, 0.55);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">⚡ متوسط سرعة الاستجابة</span>
+                <span style="font-size: 18px;">⏱️</span>
+              </div>
+              <div id="gemini-stat-latency" style="font-size: 26px; font-weight: 900; color: #10B981; margin-top: 8px;">0.0 ث</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">زمن صياغة المقال والرد بالثواني</div>
+            </div>
+
+            <div class="glass-card" style="padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: rgba(15, 23, 42, 0.55);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">📅 تدخلات اليوم (24h)</span>
+                <span style="font-size: 18px;">🔥</span>
+              </div>
+              <div id="gemini-stat-today" style="font-size: 26px; font-weight: 900; color: #F59E0B; margin-top: 8px;">0</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">النشاط البديل خلال آخر 24 ساعة</div>
+            </div>
+
+            <div class="glass-card" style="padding: 16px 20px; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: rgba(15, 23, 42, 0.55);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">🎯 كفاءة التوليد البديل</span>
+                <span style="font-size: 18px;">✨</span>
+              </div>
+              <div id="gemini-stat-success-rate" style="font-size: 26px; font-weight: 900; color: #A78BFA; margin-top: 8px;">100%</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">نسبة النجاح والاستجابة الصحيحة</div>
+            </div>
+          </div>
+
+          <!-- Glass Control Dock -->
+          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 280px;">
+                <div style="position: relative; width: 100%;">
+                  <input type="text" id="gemini-search-input" placeholder="🔍 ابحث باسم الصحفي، عنوان المقال، أو سبب العطل..." style="width: 100%; box-sizing: border-box; background: rgba(10, 14, 24, 0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; padding: 10px 14px; font-size: 13px; font-family: var(--font-main);">
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <select id="gemini-status-filter" style="background: rgba(10, 14, 24, 0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #fff; padding: 10px 14px; font-size: 12.5px; font-family: var(--font-main);">
+                  <option value="الكل">كل الحالات (All)</option>
+                  <option value="SUCCESS">ناجحة (SUCCESS)</option>
+                  <option value="FAILED">فاشلة (FAILED)</option>
+                </select>
+                <button type="button" class="btn btn-secondary" id="btn-refresh-gemini-logs" style="padding: 9px 16px; font-size: 12.5px; display: flex; align-items: center; gap: 6px; border-radius: 10px;">
+                  <span>🔄</span> تحديث
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-test-groq-ping" style="padding: 9px 18px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; border-radius: 10px; background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); border: none; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">
+                  <span id="groq-ping-icon">⚡</span> <span id="groq-ping-text">فحص Groq (120B)</span>
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-test-gemini-ping" style="padding: 9px 18px; font-size: 12.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; border-radius: 10px; background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); border: none; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                  <span id="gemini-ping-icon">🛡️</span> <span id="gemini-ping-text">فحص Gemini</span>
+                </button>
+              </div>
+            </div>
+            <!-- Test Result Feedback Banner -->
+            <div id="gemini-test-banner" style="display: none; margin-top: 14px; padding: 10px 16px; border-radius: 10px; font-size: 12.5px; font-weight: 600;"></div>
+          </div>
+
+          <!-- Invocations Table Card -->
+          <div class="glass-card" style="border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); padding: 20px; overflow-x: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+                <span>📋</span> سجل تدخلات البدائل الذكية اللحظية
+              </h3>
+              <span id="gemini-logs-total-badge" class="badge" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(96, 165, 250, 0.3); font-size: 11.5px; padding: 3px 10px;">0 عملية مسجلة</span>
+            </div>
+
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; text-align: right;">
+              <thead>
+                <tr style="color: var(--text-muted); font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                  <th style="padding: 10px 12px; font-weight: 700;">#</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">تاريخ وتوقيت العملية</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">صاحب الخبر</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">عنوان الخبر</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">المحرك المنقذ</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">سبب التدخل</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">سرعة الاستجابة</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">التوكنات</th>
+                  <th style="padding: 10px 12px; font-weight: 700;">الحالة</th>
+                  <th style="padding: 10px 12px; font-weight: 700; text-align: center;">التفاصيل</th>
+                </tr>
+              </thead>
+              <tbody id="gemini-logs-tbody">
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 40px 15px; color: var(--text-muted);">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🛡️</div>
+                    <div style="font-weight: 700; font-size: 14px; color: #FFFFFF;">جاري تحميل سجلات المراقبة...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Pagination Bar -->
+            <div id="gemini-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 13px; flex-wrap: wrap; gap: 12px;">
+              <span id="gemini-page-info" style="color: var(--text-muted); font-weight: 600;"></span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn btn-secondary" id="btn-gemini-prev" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;">السابق ‹</button>
+                <span id="gemini-page-display" style="padding: 6px 12px; font-weight: 800; background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(96, 165, 250, 0.3); border-radius: 8px;">1</span>
+                <button class="btn btn-secondary" id="btn-gemini-next" style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;">› التالي</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Gemini Fallback Details Modal -->
+        <div id="modal-gemini-details" class="crm-modal-overlay">
+          <div class="crm-modal-box" style="max-width: 580px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 22px;">🛡️</span>
+                <div>
+                  <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #FFFFFF;">تفاصيل عملية التدخل البديل (Gemini)</h3>
+                  <span id="modal-gemini-id" style="font-size: 11.5px; color: #60A5FA; font-weight: 600;"></span>
+                </div>
+              </div>
+              <button type="button" onclick="closeGeminiModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <div id="modal-gemini-body" style="font-size: 13px; color: #E2E8F0; line-height: 1.8;">
+              <!-- Filled via JS -->
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+              <button type="button" class="btn btn-secondary" onclick="closeGeminiModal()" style="padding: 8px 20px; font-size: 12.5px; border-radius: 8px;">إغلاق النافذة</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================================================================
+             VIEW 6: SETTINGS & WORDPRESS POOL
              =================================================================== -->
         <section id="view-settings" class="view-section">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+            <!-- ============================================================= -->
+            <!-- 👤 Journalist Identity & WhatsApp Definition Card (PRIMARY)   -->
+            <!-- ============================================================= -->
+            <div class="glass-card" style="grid-column: 1 / -1; border: 1.5px solid var(--accent-gold); box-shadow: 0 8px 30px rgba(245, 158, 11, 0.12); margin-bottom: 8px; border-radius: 16px;">
+              <div class="card-title"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 26px;">👤</span>
+                  <div>
+                    <h3 style="margin: 0; font-size: 16.5px; font-weight: 800; color: var(--accent-gold);">
+                      الهوية الصحفية وبيانات المحرر (الاسم الثنائي والجنس)
+                    </h3>
+                    <p style="margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted);">
+                      يتم اعتماد هذا الاسم والصفة تلقائياً في تعريفك للعملاء برسائل الواتساب وداخل كافة أروقة المنظومة.
+                    </p>
+                  </div>
+                </div>
+                <span id="settings-identity-status" class="badge badge-gold" style="font-size: 12px; padding: 4px 10px;">✨ هوية معتمدة</span>
+              </div>
+
+              <form id="form-settings-identity" style="text-align: right; margin-top: 14px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px;">
+                  <!-- Binary Full Name -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                      <span>✍️</span>
+                      <span>الاسم الثنائي المعتمد</span>
+                      <span style="color: #EF4444;">*</span>
+                    </label>
+                    <input type="text" id="settings-identity-name" class="form-input" placeholder="مثال: محمد ابراهيم أو هدى أحمد" required
+                      style="font-size: 14.5px; font-weight: 700; padding: 12px 14px; border-radius: 10px; border-color: rgba(245, 158, 11, 0.4);">
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                      ⚠️ يجب كتابة الاسم ثنائياً على الأقل (الاسم الأول واسم العائلة).
+                    </div>
+                  </div>
+
+                  <!-- Gender / Editorial Role -->
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label" style="font-size: 13.5px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                      <span>⚧️</span>
+                      <span>الصفة الصحفية والجنس</span>
+                      <span style="color: #EF4444;">*</span>
+                    </label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                      <label class="gender-card-settings" id="settings-card-gender-male" style="cursor: pointer; border: 1.5px solid var(--accent-gold); background: rgba(245, 158, 11, 0.12); border-radius: 10px; padding: 12px; text-align: center; display: block; transition: all 0.2s;">
+                        <input type="radio" name="settings-identity-gender" value="male" checked style="display: none;">
+                        <span style="font-size: 22px;">👨</span>
+                        <div style="font-weight: 800; font-size: 13.5px; color: var(--text-primary); margin-top: 2px;">ذكر</div>
+                        <div style="font-size: 11px; color: var(--accent-gold); font-weight: 600;">صحفي لدى الجريدة</div>
+                      </label>
+                      <label class="gender-card-settings" id="settings-card-gender-female" style="cursor: pointer; border: 1.5px solid var(--border-subtle); background: var(--bg-surface-2); border-radius: 10px; padding: 12px; text-align: center; display: block; transition: all 0.2s;">
+                        <input type="radio" name="settings-identity-gender" value="female" style="display: none;">
+                        <span style="font-size: 22px;">👩</span>
+                        <div style="font-weight: 800; font-size: 13.5px; color: var(--text-primary); margin-top: 2px;">أنثى</div>
+                        <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;">صحفية لدى الجريدة</div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Live Preview in Settings -->
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;">
+                  <div style="font-size: 11.5px; font-weight: 700; color: #10B981; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <span>📲</span>
+                    <span>معاينة جملة التعريف التلقائية في رسائل الواتساب المرسلة للعملاء:</span>
+                  </div>
+                  <div id="settings-identity-preview" style="font-size: 14px; font-weight: 800; color: var(--text-primary); line-height: 1.5;">
+                    أنا محمد ابراهيم، صحفي لدى جريدة تحت الضوء الإخبارية
+                  </div>
+                </div>
+
+                <div style="text-align: left;">
+                  <button type="submit" id="btn-save-settings-identity" class="btn btn-gold" style="padding: 11px 28px; font-weight: 800; font-size: 14px; border-radius: 10px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.25);">
+                    حفظ وتحديث الهوية الصحفية 💾
+                  </button>
+                </div>
+              </form>
+            </div>
+
 
             <!-- Blogger Account & Google Identity Card -->
             <div class="glass-card" style="border: 1px solid var(--accent-gold-border);">
@@ -1202,7 +2730,7 @@
                     style="width: 20px; height: 20px;">
                     <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                   </svg>
-                  <span>حساب Google ومدونة Blogger</span>
+                  <span>حسابات ومواقع ووردبريس (WordPress REST API)</span>
                 </div>
                 <span id="settings-blogger-status" class="badge badge-success">🟢 متصل بنجاح</span>
               </div>
@@ -1244,7 +2772,7 @@
                 <div style="font-size: 26px; margin-bottom: 6px;">⚠️</div>
                 <div style="font-weight: 700; color: #EF4444; font-size: 14px; margin-bottom: 4px;">لا يوجد حساب Google
                   متصل حالياً بالنظام</div>
-                <p style="font-size: 12px; color: var(--text-muted); margin: 0;">يجب ربط حساب Google بصلاحيات Blogger
+                <p style="font-size: 12px; color: var(--text-muted); margin: 0;">يتم الاتصال بموقعي الريفيو والأساسي عبر WordPress Application Passwords
                   لتفعيل النشر التلقائي ومزامنة أخبار الجريدة.</p>
               </div>
 
@@ -1324,9 +2852,56 @@
                 </div>
 
                 <div
-                  style="padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border-radius: var(--radius-sm); border-right: 3px solid #3B82F6; font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                  style="padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border-radius: var(--radius-sm); border-right: 3px solid #3B82F6; font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
                   💡 <strong>نظام الحصص الفردية:</strong> كل صحفي يعمل بمفتاح API الخاص به مباشرة لتفادي أي ضغط سحابي أو
                   توقف، وضمان أقصى سرعة واستقلالية في الصياغة والنشر دون أي قيود مشتركة.
+                </div>
+
+                <!-- AI Engine Live Health & Load Monitor Widget -->
+                <div id="ai-health-monitor-card" style="padding: 18px; background: rgba(0, 0, 0, 0.4); border: 1.5px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-size: 20px;">🤖</span>
+                      <span style="font-size: 14px; font-weight: 800; color: var(--accent-gold);">مؤشر حالة وضغط محرك الذكاء الاصطناعي (GLM)</span>
+                    </div>
+                    <span id="ai-health-status-badge" class="badge" style="font-size: 12px; padding: 4px 12px; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.45);">
+                      🟢 جاري الفحص...
+                    </span>
+                  </div>
+
+                  <!-- Metrics Grid -->
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px;">
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 8px;">
+                      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px;">⚡ سرعة الاستجابة</div>
+                      <div id="ai-health-latency" style="font-size: 14px; font-weight: 800; color: #38BDF8; font-family: var(--font-code);">-- ثانية</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 8px;">
+                      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px;">🏷️ الموديل الفعّال</div>
+                      <div id="ai-health-model" style="font-size: 13px; font-weight: 700; color: var(--text-primary); font-family: var(--font-code);">glm-4.7-flash</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 8px;">
+                      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 3px;">🕒 آخر فحص</div>
+                      <div id="ai-health-last-check" style="font-size: 12px; color: var(--text-secondary);">لم يتم بعد</div>
+                    </div>
+                  </div>
+
+                  <!-- Status Description Banner -->
+                  <div id="ai-health-status-desc" style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 6px; border-right: 3px solid #10B981;">
+                    اضغط على زر الفحص لاختبار سرعة الاستجابة اللحظية والتأكد من عدم وجود ضغط في الدقيقة الحالية.
+                  </div>
+
+                  <!-- Ping Action Button -->
+                  <button type="button" id="btn-ai-health-ping" class="btn btn-secondary btn-block" style="font-size: 13.5px; padding: 10px 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: rgba(245, 158, 11, 0.4); color: var(--accent-gold); background: rgba(245, 158, 11, 0.06);">
+                    <span id="ai-health-btn-icon">⚡</span>
+                    <span id="ai-health-btn-text">فحص الاتصال والضغط اللحظي الآن (Ping Test)</span>
+                  </button>
+
+                  <!-- Quick Color Guide -->
+                  <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+                    <span style="display: flex; align-items: center; gap: 4px;">🟢 <strong>أخضر:</strong> متاح وسريع فوراً</span>
+                    <span style="display: flex; align-items: center; gap: 4px;">🟡 <strong>أصفر:</strong> ضغط دقيقة (انتظر 20 ثانية)</span>
+                    <span style="display: flex; align-items: center; gap: 4px;">🔴 <strong>أحمر:</strong> صيانة سحابية أو نفاد حصة</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1369,6 +2944,30 @@
               </div>
             </div>
 
+            <!-- Promote Tool Permissions (Admin / Chief Editor only) -->
+            <div class="glass-card admin-only" id="card-transfer-permissions" style="grid-column: 1 / -1; margin-top: 18px;">
+              <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                  <span>✅</span>
+                  <span>صلاحيات ميزة «اعتماد الخبر» (تفعيل بالحسابات بالاسم)</span>
+                </span>
+                <span class="badge badge-gold" style="font-size: 11px;">إدارة رئيس التحرير</span>
+              </div>
+              <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;">
+                حدد الحسابات المصرح لها باستخدام ميزة <strong>«اعتماد الخبر» ونقله من جريدة الريفيو إلى الأساسية وتسجيل البيانات</strong>. رئيس التحرير مصرح له دائماً، ويمكنك هنا تفعيل الميزة لصحفيين أو محررين محددين بالاسم:
+              </p>
+              
+              <div id="transfer-users-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 18px;">
+                <div style="color: var(--text-muted); font-size: 13px;">جاري تحميل قائمة الحسابات...</div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" id="btn-save-transfer-permissions" class="btn btn-primary" style="padding: 10px 22px; font-weight: 700;">
+                  <span>💾 حفظ الصلاحيات المحددة</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Journalist Activation Codes Generator Card (Admin Only) -->
             <div id="admin-activation-card" class="glass-card admin-only"
               style="grid-column: 1 / -1; margin-top: 18px;">
@@ -1402,7 +3001,8 @@
                   <label class="form-label">الرتبة الممنوحة</label>
                   <select id="new-act-role" class="form-select">
                     <option value="journalist">✍️ صحفي معتمد</option>
-                    <option value="editor" selected>⭐ صحفي مميز</option>
+                    <option value="editor">⭐ صحفي مميز</option>
+                    <option value="deputy_editor" selected>🎖️ نائب رئيس تحرير</option>
                     <option value="admin">👑 رئيس تحرير</option>
                   </select>
                 </div>
@@ -1470,6 +3070,195 @@
           </div>
         </section>
 
+        <!-- ===================================================================
+             VIEW 8: SMART REVIEW ARTICLES CLEANUP (CHIEF & DEPUTY EDITOR ONLY)
+             =================================================================== -->
+        <section id="view-review-cleanup" class="view-section">
+          <!-- Page Header -->
+          <div class="glass-card" style="margin-bottom: 20px; border-color: rgba(239, 68, 68, 0.35); background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(245, 158, 11, 0.04));">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span style="font-size: 26px;">🧹</span>
+                  <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">
+                    تنظيف وحذف أخبار الريفيو الذكي
+                  </h2>
+                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 11.5px; font-weight: 700;">
+                    خاص برئيس التحرير ونائبه 🛡️
+                  </span>
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6;">
+                  نظام ذكي يقوم بمطابقة أخبار الريفيو لحظياً مع مقالات الجريدة الأساسية بالذكاء الاصطناعي، لحماية الأخبار المنقولة والمعتمدة وحذف الأخبار غير المعتمدة بضغطة زر واحدة.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="btn-refresh-review-cleanup" class="btn btn-secondary" style="font-size: 13px; padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
+                  <span>🔄</span>
+                  <span>تحديث الأيام</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1. DATES LIST VIEW (DEFAULT) -->
+          <div id="rc-dates-view">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+              <div style="font-size: 14.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <span>📅</span>
+                <span>الأيام المتوفرة في أرشيف الريفيو</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="date" id="rc-custom-date-input" class="form-input" style="padding: 6px 12px; font-size: 12.5px; width: 160px; background: rgba(0,0,0,0.3); border-color: rgba(245, 158, 11, 0.3);">
+                <button type="button" id="btn-rc-custom-date-inspect" class="btn btn-secondary" style="font-size: 12.5px; padding: 6px 14px; display: flex; align-items: center; gap: 6px; border-color: var(--accent-gold); color: var(--accent-gold);">
+                  <span>🔍</span>
+                  <span>فحص تاريخ مخصص</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="rc-dates-loading" style="display: none; text-align: center; padding: 40px; color: var(--accent-gold);">
+              <div style="font-size: 32px; animation: spin 1s linear infinite; display: inline-block;">⏳</div>
+              <div style="margin-top: 10px; font-weight: 700; font-size: 14px;">جاري فحص أرشيف أيام الريفيو...</div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="rc-dates-empty" class="glass-card" style="display: none; text-align: center; padding: 40px 20px;">
+              <div style="font-size: 40px; margin-bottom: 10px;">✨</div>
+              <h4 style="color: #10B981; font-size: 16px; font-weight: 700; margin-bottom: 6px;">أرشيف الريفيو نظيف تماماً!</h4>
+              <p style="color: var(--text-muted); font-size: 13px; margin: 0;">لا توجد أي مقالات ريفيو تحتاج إلى تنظيف حالياً.</p>
+            </div>
+
+            <!-- Dates Grid Cards -->
+            <div id="rc-dates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Generated Dynamically via JS -->
+            </div>
+          </div>
+
+          <!-- 2. DAY INSPECTOR VIEW (WHEN A DAY IS SELECTED) -->
+          <div id="rc-inspector-view" style="display: none;">
+            <!-- Back Button & Day Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+              <button type="button" id="btn-rc-back-to-dates" class="btn btn-secondary" style="font-size: 13px; padding: 7px 14px; display: flex; align-items: center; gap: 6px;">
+                <span>←</span>
+                <span>العودة لقائمة الأيام</span>
+              </button>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                <div style="font-size: 15px; font-weight: 800; color: var(--accent-gold); display: flex; align-items: center; gap: 6px;">
+                  <span>🗓️</span>
+                  <span>فحص ومطابقة أخبار يوم:</span>
+                  <span id="rc-inspector-date-label" style="color: #FFFFFF; font-family: var(--font-display);">--</span>
+                </div>
+                <div id="rc-inspector-window-badge" style="font-size: 11.5px; color: #60A5FA; display: flex; align-items: center; gap: 6px; background: rgba(59, 130, 246, 0.12); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.25);">
+                  <span>🔍 نافذة المقارنة الحية:</span>
+                  <span id="rc-inspector-window-label" style="font-weight: 700;">نفس اليوم واليوم التالي</span>
+                  <span>(تم فحص <strong id="rc-inspector-main-count" style="color: #93C5FD;">0</strong> مقال بالأساسية)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- KPI Metric Summary (3 Cards Grid) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 18px;">
+              <!-- Card: Total -->
+              <div class="glass-card" style="padding: 16px; text-align: center; border-color: rgba(255, 255, 255, 0.1);">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">إجمالي أخبار اليوم بالريفيو</div>
+                <div id="rc-stat-total" style="font-size: 26px; font-weight: 800; color: var(--text-primary); font-family: var(--font-code);">0</div>
+              </div>
+
+              <!-- Card: Matched (Approved) -->
+              <div class="glass-card" style="padding: 16px; text-align: center; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.06);">
+                <div style="font-size: 12px; color: #34D399; font-weight: 700; margin-bottom: 4px;">🟢 معتمدة على الأساسية (محفوظة)</div>
+                <div id="rc-stat-matched" style="font-size: 26px; font-weight: 800; color: #10B981; font-family: var(--font-code);">0</div>
+              </div>
+
+              <!-- Card: Unmatched (To Delete) -->
+              <div class="glass-card" style="padding: 16px; text-align: center; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.06);">
+                <div style="font-size: 12px; color: #F87171; font-weight: 700; margin-bottom: 4px;">🔴 غير معتمدة (مستهدفة للحذف)</div>
+                <div id="rc-stat-unmatched" style="font-size: 26px; font-weight: 800; color: #EF4444; font-family: var(--font-code);">0</div>
+              </div>
+            </div>
+
+            <!-- Action Command Center Bar -->
+            <div class="glass-card" style="margin-bottom: 18px; padding: 16px 20px; border-color: rgba(245, 158, 11, 0.3);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <!-- Primary Action: Delete Only Unapproved -->
+                  <button type="button" id="btn-rc-delete-unapproved" class="btn" style="background: linear-gradient(135deg, #DC2626, #B91C1C); color: #FFFFFF; font-weight: 800; font-size: 13.5px; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);">
+                    <span>🧹</span>
+                    <span>حذف غير المعتمدة فقط (<span id="rc-btn-unapproved-count">0</span> خبر)</span>
+                  </button>
+
+                  <!-- Danger Action: Delete ALL Today -->
+                  <button type="button" id="btn-rc-delete-all-day" class="btn btn-secondary" style="border-color: rgba(239, 68, 68, 0.5); color: #EF4444; font-size: 12.5px; padding: 9px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <span>🗑️</span>
+                    <span>حذف الكل في هذا اليوم</span>
+                  </button>
+                </div>
+
+                <!-- Selective Delete Action -->
+                <div>
+                  <button type="button" id="btn-rc-delete-selected" class="btn btn-secondary" disabled style="font-size: 12.5px; padding: 9px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; opacity: 0.5;">
+                    <span>☑️</span>
+                    <span>حذف المحدد يدويًا (<span id="rc-btn-selected-count">0</span>)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filters, Search & Bulk Select Bar -->
+            <div class="glass-card" style="margin-bottom: 16px; padding: 14px 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <!-- Filter Tabs -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="rc-tab-btn active" data-rc-filter="all" style="background: rgba(245, 158, 11, 0.15); border: 1px solid var(--accent-gold); color: var(--accent-gold); padding: 6px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+                    الكل (<span id="rc-tab-count-all">0</span>)
+                  </button>
+                  <button type="button" class="rc-tab-btn" data-rc-filter="unapproved" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+                    🔴 غير معتمدة (<span id="rc-tab-count-unmatched">0</span>)
+                  </button>
+                  <button type="button" class="rc-tab-btn" data-rc-filter="approved" style="background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+                    🟢 معتمدة على الأساسية (<span id="rc-tab-count-matched">0</span>)
+                  </button>
+                </div>
+
+                <!-- Search Input -->
+                <div style="flex: 1; max-width: 320px; position: relative;">
+                  <input type="text" id="rc-search-input" class="form-input" placeholder="🔍 بحث في عناوين المقالات..." style="font-size: 12.5px; padding: 7px 12px;">
+                </div>
+
+                <!-- Master Select All Checkbox -->
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-primary);">
+                  <input type="checkbox" id="rc-select-all-cb" style="width: 16px; height: 16px; cursor: pointer;">
+                  <label for="rc-select-all-cb" style="cursor: pointer; user-select: none;">تحديد الكل المعروض</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Articles Table -->
+            <div class="table-responsive glass-card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+              <table class="data-table" style="margin: 0;">
+                <thead>
+                  <tr style="background: rgba(0, 0, 0, 0.3);">
+                    <th style="width: 40px; text-align: center;">#</th>
+                    <th style="text-align: right;">عنوان الخبر على الريفيو</th>
+                    <th style="width: 220px; text-align: center;">حالة الاعتماد والمطابقة</th>
+                    <th style="width: 120px; text-align: center;">إجراء سريع</th>
+                  </tr>
+                </thead>
+                <tbody id="rc-articles-table-body">
+                  <!-- Articles loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Inspector Empty Filter State -->
+            <div id="rc-inspector-empty" style="display: none; text-align: center; padding: 30px; color: var(--text-muted); font-size: 13px;">
+              لا توجد أخبار مطابقة للتصفية أو البحث المحدد.
+            </div>
+          </div>
+        </section>
+
       </div>
     </main>
   </div>
@@ -1520,7 +3309,7 @@
 
         <div
           style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
-          <span>🤖 صياغة الذكاء الاصطناعي Z.AI + ربط سحابي Blogger</span>
+          <span>🤖 صياغة الذكاء الاصطناعي Z.AI + نشر فوري ووردبريس</span>
           <span id="publish-elapsed-timer" style="font-family: var(--font-code);">الوقت: 00:01 ث</span>
         </div>
 
@@ -1548,7 +3337,7 @@
           🎉 تم نشر الخبر بنجاح بالجريدة!
         </h3>
         <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">
-          تم بث الخبر على منصة Google Blogger وتجهيز رسالة الواتساب للعميل فوراً.
+          تم بث الخبر على موقع ووردبريس وتجهيز رسالة الواتساب للعميل فوراً.
         </p>
 
         <!-- Published Info Card -->
@@ -1962,6 +3751,11 @@
         <span>إنشاء خبر سريع</span>
       </button>
 
+      <button class="mobile-drawer-nav-item" data-drawer-view="poster-studio">
+        <span class="drawer-nav-icon">🎨</span>
+        <span>استوديو البوسترات الذكي</span>
+      </button>
+
       <button class="mobile-drawer-nav-item" data-drawer-view="verification">
         <span class="drawer-nav-icon">🔍</span>
         <span>فحص العملاء والتكرار</span>
@@ -1987,6 +3781,16 @@
         <span>سجل العمليات اللحظي</span>
       </button>
 
+      <button class="mobile-drawer-nav-item" id="drawer-item-promote-tool" data-drawer-view="promote-tool" style="display:none;">
+        <span class="drawer-nav-icon">✅</span>
+        <span>اعتماد الخبر</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item" id="drawer-item-review-cleanup" data-drawer-view="review-cleanup" style="display:none;">
+        <span class="drawer-nav-icon">🧹</span>
+        <span>تنظيف أخبار الريفيو</span>
+      </button>
+
       <!-- Admin Sections -->
       <div class="mobile-drawer-divider"></div>
       <div class="mobile-drawer-section-label admin-only" style="display:none;">إدارة المنظومة</div>
@@ -1994,6 +3798,21 @@
       <button class="mobile-drawer-nav-item admin-only" data-drawer-view="reporters" style="display:none;">
         <span class="drawer-nav-icon">👥</span>
         <span>فريق المراسلين</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item admin-only" data-drawer-view="customer-leads" style="display:none;">
+        <span class="drawer-nav-icon">📇</span>
+        <span>بيانات العملاء</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item admin-only" data-drawer-view="facebook-hub" id="drawer-facebook-hub" style="display:none;">
+        <span class="drawer-nav-icon">📘</span>
+        <span>إدارة فيسبوك</span>
+      </button>
+
+      <button class="mobile-drawer-nav-item admin-only" data-drawer-view="gemini-fallback" id="drawer-nav-gemini-fallback" style="display:none;">
+        <span class="drawer-nav-icon">🛡️</span>
+        <span>بديل الذكاء (Gemini)</span>
       </button>
 
       <button class="mobile-drawer-nav-item admin-only" data-drawer-view="bot-control" style="display:none;">
@@ -2063,6 +3882,81 @@
   <!-- ======================================================================
        MODAL SHEET HANDLES — inserted at top of each modal inner div
        ====================================================================== -->
+
+  <!-- MODAL: REVIEW CLEANUP CONFIRMATION DIALOG -->
+  <div id="modal-rc-confirm"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(15px); z-index: 2600; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 480px; max-width: 95%; background: #121826; border: 1.5px solid #EF4444; border-radius: 16px; padding: 26px; box-shadow: 0 0 50px rgba(239, 68, 68, 0.35); text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+      <h3 id="rc-modal-title" style="font-size: 18px; font-weight: 800; color: #EF4444; margin-bottom: 8px;">
+        تأكيد حذف مقالات الريفيو
+      </h3>
+      <p id="rc-modal-description" style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+        هل أنت متأكد من رغبتك في حذف المقالات المحددة؟ سيتم حذفها نهائياً من موقع الريفيو على ووردبريس ومن قاعدة البيانات.
+      </p>
+
+      <div id="rc-modal-stats-box" style="background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 12px; margin-bottom: 22px; font-size: 13px; color: var(--text-primary);">
+        عدد المقالات المستهدفة للحذف: <strong id="rc-modal-target-count" style="color: #EF4444; font-size: 16px;">0</strong> خبر
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: 12px;">
+        <button type="button" id="btn-rc-modal-cancel" class="btn btn-secondary" style="padding: 10px 22px; font-weight: 700;">
+          إلغاء وتراجع
+        </button>
+        <button type="button" id="btn-rc-modal-confirm" class="btn" style="background: #DC2626; color: #FFFFFF; font-weight: 800; padding: 10px 24px; border-radius: 8px; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);">
+          نعم، احذف نهائياً 🗑️
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REVIEW CLEANUP PROGRESS BAR (1% -> 100%) -->
+  <div id="modal-rc-deletion-progress"
+    style="display: none; position: fixed; inset: 0; background: rgba(9, 13, 22, 0.92); backdrop-filter: blur(20px); z-index: 2700; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card"
+      style="width: 520px; max-width: 95%; background: #121826; border: 1.5px solid #EF4444; border-radius: 18px; padding: 32px 26px; box-shadow: 0 0 50px rgba(239, 68, 68, 0.35), 0 20px 40px rgba(0,0,0,0.8); text-align: center; position: relative;">
+      
+      <!-- Animated Icon -->
+      <div style="width: 72px; height: 72px; margin: 0 auto 16px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(0,0,0,0.6)); border: 2px solid #EF4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); font-size: 32px;">
+        🗑️
+      </div>
+
+      <h3 id="rc-del-progress-title" style="font-size: 19px; font-weight: 800; color: #FFFFFF; margin-bottom: 6px;">
+        جاري حذف مقالات الريفيو...
+      </h3>
+      <p id="rc-del-progress-status" style="font-size: 13.5px; color: #F87171; font-weight: 600; margin-bottom: 22px;">
+        ⚡ جاري الاتصال بـ ووردبريس وقاعدة البيانات...
+      </p>
+
+      <!-- Progress Bar & Percentage Box -->
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 18px 20px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 12.5px; color: var(--text-muted);">مؤشر تقدم الحذف المباشر</span>
+          <span id="rc-del-percent-text" style="font-family: var(--font-code); font-size: 22px; font-weight: 800; color: #EF4444;">1%</span>
+        </div>
+
+        <!-- Progress track and bar -->
+        <div style="width: 100%; height: 14px; background: rgba(0,0,0,0.6); border-radius: 7px; overflow: hidden; border: 1px solid rgba(239, 68, 68, 0.35); position: relative;">
+          <div id="rc-del-progress-bar"
+            style="width: 1%; height: 100%; background: linear-gradient(90deg, #DC2626, #EF4444, #F87171); border-radius: 7px; box-shadow: 0 0 16px rgba(239, 68, 68, 0.8); transition: width 0.35s ease;">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary);">
+          <span>تم حذف: <strong id="rc-del-count-current" style="color: #FFFFFF; font-family: var(--font-code); font-size: 14px;">0</strong> من أصل <strong id="rc-del-count-total" style="color: #FFFFFF; font-family: var(--font-code); font-size: 14px;">0</strong></span>
+          <span id="rc-del-batch-info" style="color: var(--accent-gold); font-size: 12px;">جاري تجهيز الدفعات...</span>
+        </div>
+      </div>
+
+      <!-- Live Terminal Output Strip -->
+      <div id="rc-del-live-log"
+        style="background: rgba(0,0,0,0.65); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 9px 14px; font-family: var(--font-code); font-size: 12px; color: #34D399; text-align: right; min-height: 34px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px;">
+        <span>⚡</span>
+        <span id="rc-del-log-text">بدء عملية الحذف...</span>
+      </div>
+    </div>
+  </div>
 
   <!-- TOAST NOTIFICATIONS CONTAINER -->
   <div id="toast-container"></div>
