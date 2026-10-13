@@ -1029,7 +1029,7 @@
             
             <!-- Step 1: Input Form Card -->
             <div class="glass-card" style="padding: 26px;">
-              <form id="form-smart-edit">
+              <form id="form-smart-edit" onsubmit="event.preventDefault(); handleSmartEditSubmit(event); return false;">
                 
                 <!-- URL Input + Fetch Button -->
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -1043,7 +1043,7 @@
                   </label>
                   <div style="display: flex; gap: 10px;">
                     <input type="url" id="smart-edit-url" class="form-input" placeholder="https://review.tahteldoo.com/2026/10/example-article.html" required style="font-family: var(--font-code); font-size: 14px; direction: ltr; text-align: left; padding: 12px 14px;">
-                    <button type="button" id="btn-smart-edit-fetch" class="btn btn-secondary" style="white-space: nowrap; padding: 0 22px; font-weight: 700;">
+                    <button type="button" id="btn-smart-edit-fetch" onclick="handleSmartEditFetch(event)" class="btn btn-secondary" style="white-space: nowrap; padding: 0 22px; font-weight: 700;">
                       <span id="smart-edit-fetch-text">جلب الخبر 🔍</span>
                       <span id="smart-edit-fetch-spinner" class="spinner" style="display: none; width: 16px; height: 16px;"></span>
                     </button>
@@ -1091,7 +1091,7 @@
                 </div>
 
                 <!-- Action Button -->
-                <button type="submit" id="btn-smart-edit-submit" class="btn btn-gold btn-block" style="height: 52px; font-size: 15.5px; font-weight: 800; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); border-radius: 10px;">
+                <button type="button" id="btn-smart-edit-submit" onclick="handleSmartEditSubmit(event)" class="btn btn-gold btn-block" style="height: 52px; font-size: 15.5px; font-weight: 800; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); border-radius: 10px;">
                   <span id="smart-edit-submit-text">تنفيذ التعديل الجراحي وتحديث الخبر عبر Gemini 🤖</span>
                   <span id="smart-edit-submit-spinner" class="spinner" style="display: none; width: 18px; height: 18px; margin-right: 8px;"></span>
                 </button>
@@ -1115,7 +1115,7 @@
                   <button type="button" id="btn-smart-edit-copy-link" class="btn btn-secondary" style="font-weight: 700; padding: 9px 16px; font-size: 13.5px;">
                     📋 نسخ الرابط
                   </button>
-                  <button type="button" id="btn-smart-edit-undo" class="btn" style="font-weight: 700; padding: 9px 18px; font-size: 13.5px; background: rgba(239, 68, 68, 0.15); border: 1.5px solid #EF4444; color: #FCA5A5; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 8px; transition: all 0.2s ease;">
+                  <button type="button" id="btn-smart-edit-undo" onclick="handleSmartEditUndo(event)" class="btn" style="font-weight: 700; padding: 9px 18px; font-size: 13.5px; background: rgba(239, 68, 68, 0.15); border: 1.5px solid #EF4444; color: #FCA5A5; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border-radius: 8px; transition: all 0.2s ease;">
                     <span id="smart-edit-undo-text">↩️ تراجع واستعادة الأصل (Undo)</span>
                     <span id="smart-edit-undo-spinner" class="spinner" style="display: none; width: 14px; height: 14px;"></span>
                   </button>

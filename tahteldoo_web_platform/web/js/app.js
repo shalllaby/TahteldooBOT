@@ -63,7 +63,13 @@ async function apiCall(endpoint, method = 'GET', body = null, isFormData = false
       throw new Error('انتهت الجلسة، يرجى إعادة تسجيل الدخول');
     }
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (_) {
+      const text = await res.text().catch(() => '');
+      data = { detail: text || `خطأ في استجابة الخادم (${res.status})` };
+    }
     if (!res.ok) {
       throw new Error(data.detail || data.message || 'حدث خطأ غير متوقع');
     }
@@ -7301,11 +7307,18 @@ function initSmartEditor() {
   const btnFetch = document.getElementById('btn-smart-edit-fetch');
   const inputUrl = document.getElementById('smart-edit-url');
   const form = document.getElementById('form-smart-edit');
+  const btnSubmit = document.getElementById('btn-smart-edit-submit');
   const btnCopy = document.getElementById('btn-smart-edit-copy-link');
   const btnUndo = document.getElementById('btn-smart-edit-undo');
 
   if (btnFetch) {
-    btnFetch.addEventListener('click', handleSmartEditFetch);
+    btnFetch.addEventListener('click', (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      handleSmartEditFetch(e);
+    });
   }
 
   if (inputUrl) {
@@ -7315,7 +7328,25 @@ function initSmartEditor() {
   }
 
   if (form) {
-    form.addEventListener('submit', handleSmartEditSubmit);
+    form.addEventListener('submit', (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      handleSmartEditSubmit(e);
+      return false;
+    });
+  }
+
+  if (btnSubmit) {
+    btnSubmit.addEventListener('click', (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      handleSmartEditSubmit(e);
+      return false;
+    });
   }
 
   if (btnCopy) {
@@ -7332,17 +7363,27 @@ function initSmartEditor() {
   }
 
   if (btnUndo) {
-    btnUndo.addEventListener('click', handleSmartEditUndo);
+    btnUndo.addEventListener('click', (e) => {
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      }
+      handleSmartEditUndo(e);
+    });
   }
 }
 
-async function handleSmartEditFetch() {
+async function handleSmartEditFetch(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
   const urlInput = document.getElementById('smart-edit-url');
   const url = (urlInput?.value || '').trim();
   if (!url) {
     showToast('يرجى كتابة أو لصق رابط المقال أولاً 🔗', 'warning');
     urlInput?.focus();
-    return;
+    return false;
   }
 
   const btnText = document.getElementById('smart-edit-fetch-text');
@@ -7388,23 +7429,31 @@ async function handleSmartEditFetch() {
     if (spinner) spinner.style.display = 'none';
     if (btnFetch) btnFetch.disabled = false;
   }
+  return false;
 }
 
 async function handleSmartEditSubmit(e) {
-  e.preventDefault();
-  const url = (document.getElementById('smart-edit-url')?.value || '').trim();
-  const notes = (document.getElementById('smart-edit-notes')?.value || '').trim();
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }
+  const urlInput = document.getElementById('smart-edit-url');
+  const url = (urlInput?.value || '').trim();
+  const notesInput = document.getElementById('smart-edit-notes');
+  const notes = (notesInput?.value || '').trim();
   const autoPublish = document.getElementById('smart-edit-auto-publish')?.checked ?? true;
   const syncBoth = document.getElementById('smart-edit-sync-both')?.checked ?? true;
 
   if (!url) {
     showToast('يرجى إدخال رابط المقال 🔗', 'warning');
-    return;
+    urlInput?.focus();
+    return false;
   }
   if (!notes) {
     showToast('يرجى لصق ملاحظات وتعديلات العميل 💬', 'warning');
-    document.getElementById('smart-edit-notes')?.focus();
-    return;
+    notesInput?.focus();
+    return false;
   }
 
   const btnSubmit = document.getElementById('btn-smart-edit-submit');
@@ -7477,16 +7526,21 @@ async function handleSmartEditSubmit(e) {
     if (spinner) spinner.style.display = 'none';
     if (btnSubmit) btnSubmit.disabled = false;
   }
+  return false;
 }
 
-async function handleSmartEditUndo() {
+async function handleSmartEditUndo(e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
   if (!_smartEditorLastBackup) {
     showToast('لا توجد نسخة سابقة محفوظة للتراجع عنها', 'warning');
-    return;
+    return false;
   }
 
   const confirmed = confirm('هل أنت متأكد من رغبتك في التراجع عن هذا التعديل واستعادة المقال الأصلي كما كان تماماً على الموقع؟');
-  if (!confirmed) return;
+  if (!confirmed) return false;
 
   const btnUndo = document.getElementById('btn-smart-edit-undo');
   const undoText = document.getElementById('smart-edit-undo-text');
@@ -7531,10 +7585,21 @@ async function handleSmartEditUndo() {
     if (undoSpinner) undoSpinner.style.display = 'none';
     if (btnUndo) btnUndo.disabled = false;
   }
+  return false;
 }
 
 window.initSmartEditor = initSmartEditor;
+window.handleSmartEditFetch = handleSmartEditFetch;
+window.handleSmartEditSubmit = handleSmartEditSubmit;
 window.handleSmartEditUndo = handleSmartEditUndo;
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSmartEditor);
+  } else {
+    initSmartEditor();
+  }
+}
 
 
 
