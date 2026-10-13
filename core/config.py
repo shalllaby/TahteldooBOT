@@ -11,7 +11,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if sys.platform == "win32":
     APP_DATA_DIR = Path(os.getenv("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "TahtElDooPublisher"
 else:
-    APP_DATA_DIR = Path.home() / ".config" / "TahtElDooPublisher"
+    # Unified VPS Linux Path: Always point to the central production storage
+    _vps_platform = BASE_DIR / "tahteldoo_web_platform"
+    if _vps_platform.exists() and (_vps_platform / "storage").exists():
+        APP_DATA_DIR = _vps_platform
+    else:
+        APP_DATA_DIR = BASE_DIR
 
 APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -46,7 +51,7 @@ class Config:
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Z.AI / GLM Settings (Sole LLM Provider)
+    # Z.AI / GLM Settings (Primary LLM Provider)
     ZAI_API_KEY = os.getenv("ZAI_API_KEY", "")
     ZAI_API_KEY_2 = os.getenv("ZAI_API_KEY_2", "")
     ZAI_API_KEY_3 = os.getenv("ZAI_API_KEY_3", "")
@@ -54,18 +59,33 @@ class Config:
     ZAI_BASE_URL = os.getenv("ZAI_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/")
     ZAI_MODEL = os.getenv("ZAI_MODEL", "glm-4.7-flash")
 
+    # Groq Cloud Settings (Primary Fallback Engine - Fallback 1)
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+    GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
+    # Google Gemini Settings (Secondary High-Performance Fallback - Fallback 2)
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+    GEMINI_BASE_URL = os.getenv("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+
     # Telegram Bot Settings
-    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8834102717:AAGCflNVXtYccq1oG0JqYQGW2bv4WBkwhAM")
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
     # Blogger Settings
-    BLOGGER_BLOG_ID = os.getenv("BLOGGER_BLOG_ID", "")
-    BLOGGER_BLOG_NAME = os.getenv("BLOGGER_BLOG_NAME", "")
+    BLOGGER_BLOG_ID = os.getenv("BLOGGER_BLOG_ID", "3967122067465937059")
+    BLOGGER_BLOG_NAME = os.getenv("BLOGGER_BLOG_NAME", "تحت الضوء الإخبارية (review)")
+    BLOGGER_FALLBACK_BLOG_ID = os.getenv("BLOGGER_FALLBACK_BLOG_ID", "5932774642958705278")
+    BLOGGER_FALLBACK_BLOG_NAME = os.getenv("BLOGGER_FALLBACK_BLOG_NAME", "تحت الضوء الإخبارية (1review)")
+    BLOGGER_FALLBACK_BLOG_URL = os.getenv("BLOGGER_FALLBACK_BLOG_URL", "https://review2.tahteldoo.com")
+    BLOGGER_FALLBACK_EMAIL = os.getenv("BLOGGER_FALLBACK_EMAIL", "shalllaby1@gmail.com")
     GOOGLE_USER_EMAIL = os.getenv("GOOGLE_USER_EMAIL", "")
     CREDENTIALS_FILE = APP_DATA_DIR / "credentials.json" if (APP_DATA_DIR / "credentials.json").exists() else BASE_DIR / "credentials.json"
     TOKEN_FILE = APP_DATA_DIR / "token.pickle"
 
     # Image Hosting (ImgBB)
     IMGBB_API_KEY = os.getenv("ImgBB API") or os.getenv("IMGBB_API_KEY", "")
+    IMGBB_API_KEY_2 = os.getenv("IMGBB_API_KEY_2", "")
 
     # WhatsApp API (wpsenderx / direct gateway)
     WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://backendapi.wpsenderx.com/api/messages/send")
@@ -82,9 +102,16 @@ class Config:
     NEWSPAPER_URL = os.getenv("NEWSPAPER_URL", "https://www.tahteldoo.com/")
     FACEBOOK_URL = os.getenv("FACEBOOK_URL", "https://www.facebook.com/tahteldoo/")
 
+    # Facebook Graph API (Meta Pages API)
+    FB_APP_ID = os.getenv("FB_APP_ID", "2485887625231882")
+    FB_APP_SECRET = os.getenv("FB_APP_SECRET", "")
+    FB_PAGE_ID = os.getenv("FB_PAGE_ID", "200604629806605")
+    FB_PAGE_NAME = os.getenv("FB_PAGE_NAME", "تحت الضوء")
+    FB_PAGE_ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN", "")
+
     # Editor / Staff Settings (المحرر المسؤول عن رسائل الواتساب)
     EDITOR_NAME = os.getenv("EDITOR_NAME", "محمد شلبي")
-    EDITOR_ROLE = os.getenv("EDITOR_ROLE", "رئيس تحرير")
+    EDITOR_ROLE = os.getenv("EDITOR_ROLE", "صحفي لدي")
     EDITOR_PHONE = os.getenv("EDITOR_PHONE", "")
 
     # Central Hub Server (Local / Network Hub for Telegram & Desktop)
