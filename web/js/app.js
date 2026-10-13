@@ -764,6 +764,12 @@ function syncSettingsIdentityUI() {
 // =============================================================================
 function switchView(viewName) {
   State.currentView = viewName;
+  try {
+    localStorage.setItem('td_last_view', viewName);
+    if (history.replaceState) {
+      history.replaceState(null, null, '#' + viewName);
+    }
+  } catch (e) {}
 
   // Update Nav Items
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -4140,11 +4146,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check initial Auth
   await checkAuth();
 
-  // Auto-switch view if requested via URL query (e.g. ?view=settings)
+  // Auto-switch view if requested via URL query (e.g. ?view=settings) or hash or saved view
   const urlParamView = new URLSearchParams(window.location.search).get('view');
-  if (urlParamView) {
-    switchView(urlParamView);
+  const hashView = window.location.hash ? window.location.hash.replace('#', '').trim() : '';
+  const lastSavedView = localStorage.getItem('td_last_view');
+  const targetView = urlParamView || hashView || lastSavedView;
+  if (targetView && targetView !== 'create') {
+    switchView(targetView);
   }
+
+  window.addEventListener('hashchange', () => {
+    const hv = window.location.hash ? window.location.hash.replace('#', '').trim() : '';
+    if (hv && hv !== State.currentView) {
+      switchView(hv);
+    }
+  });
 
   // Background workers
   syncPublishCooldown();
@@ -7322,6 +7338,13 @@ function initSmartEditor() {
   }
 
   if (inputUrl) {
+    inputUrl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSmartEditFetch(e);
+      }
+    });
     inputUrl.addEventListener('paste', () => {
       setTimeout(handleSmartEditFetch, 200);
     });

@@ -16,6 +16,7 @@ import logging
 
 import io
 import csv
+import requests
 # Google OAuth removed — WordPress uses Application Passwords
 
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header, Query, Request, WebSocket, WebSocketDisconnect, UploadFile, File, Form, status, Response
@@ -77,9 +78,41 @@ app.include_router(poster_router)
 UPLOAD_DIR = PROJECT_ROOT / "storage" / "images"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# In-memory Token Session Store
+# In-memory Token Session Store (with automatic disk persistence)
 ACTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 SESSION_EXPIRY_HOURS = 72
+SESSION_STORE_FILE = Path(getattr(Config, "STORAGE_DIR", PROJECT_ROOT / "storage")) / "active_sessions.json"
+
+def _load_sessions():
+    global ACTIVE_SESSIONS
+    if SESSION_STORE_FILE.exists():
+        try:
+            with open(SESSION_STORE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                now = datetime.now()
+                for token, sess in data.items():
+                    exp = datetime.fromisoformat(sess["expires_at"])
+                    if exp > now:
+                        sess["expires_at"] = exp
+                        ACTIVE_SESSIONS[token] = sess
+        except Exception as e:
+            logger.warning(f"Failed to load sessions: {e}")
+
+def _save_sessions():
+    try:
+        data = {}
+        for token, sess in list(ACTIVE_SESSIONS.items()):
+            s_copy = dict(sess)
+            if isinstance(s_copy.get("expires_at"), datetime):
+                s_copy["expires_at"] = s_copy["expires_at"].isoformat()
+            data[token] = s_copy
+        SESSION_STORE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(SESSION_STORE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception as e:
+        logger.warning(f"Failed to save sessions: {e}")
+
+_load_sessions()
 
 # OAuth PKCE Code Verifier Store
 OAUTH_FLOW_CACHE: Dict[str, str] = {}
@@ -177,6 +210,7 @@ def create_session_token(user: dict) -> str:
         "gender": user.get("gender", ""),
         "expires_at": datetime.now() + timedelta(hours=SESSION_EXPIRY_HOURS)
     }
+    _save_sessions()
     return token
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
@@ -186,10 +220,14 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     token = authorization.replace("Bearer ", "").strip()
     session = ACTIVE_SESSIONS.get(token)
     if not session:
+        _load_sessions()
+        session = ACTIVE_SESSIONS.get(token)
+    if not session:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="الجلسة منتهية أو غير صالحة، يرجى تسجيل الدخول مجدداً")
     
     if datetime.now() > session["expires_at"]:
         ACTIVE_SESSIONS.pop(token, None)
+        _save_sessions()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="انتهت صلاحية الجلسة، يرجى إعادة تسجيل الدخول")
     
     uid = session.get("user_id") or session.get("id")
@@ -3762,7 +3800,11 @@ if (PROJECT_ROOT / "assets").exists():
 def serve_index():
     index_path = WEB_DIR / "index.html"
     if index_path.exists():
-        return FileResponse(index_path)
+        resp = FileResponse(index_path)
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
     return HTMLResponse("<h1>جاري تجهيز الواجهة الأمامية...</h1>")
 
 @app.get("/automation", response_class=HTMLResponse)
@@ -3788,7 +3830,11 @@ def serve_spa_fallback(full_path: str):
         raise HTTPException(status_code=404, detail="API route not found")
     index_path = WEB_DIR / "index.html"
     if index_path.exists():
-        return FileResponse(index_path)
+        resp = FileResponse(index_path)
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
     return HTMLResponse("<h1>404 Not Found</h1>", status_code=404)
 
 

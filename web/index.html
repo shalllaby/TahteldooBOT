@@ -5,11 +5,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>جريدة تحت الضوء الإخبارية — منظومة النشر الذكي السحابية</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/style.css?v=20261014_smart_edit_v5">
 </head>
 
 <body data-theme="dark">
@@ -1029,7 +1032,7 @@
             
             <!-- Step 1: Input Form Card -->
             <div class="glass-card" style="padding: 26px;">
-              <form id="form-smart-edit" onsubmit="event.preventDefault(); handleSmartEditSubmit(event); return false;">
+              <div id="form-smart-edit">
                 
                 <!-- URL Input + Fetch Button -->
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -1095,7 +1098,7 @@
                   <span id="smart-edit-submit-text">تنفيذ التعديل الجراحي وتحديث الخبر عبر Gemini 🤖</span>
                   <span id="smart-edit-submit-spinner" class="spinner" style="display: none; width: 18px; height: 18px; margin-right: 8px;"></span>
                 </button>
-              </form>
+              </div>
             </div>
 
             <!-- Result Card (Shown after execution) -->
@@ -3974,7 +3977,7 @@
   <div id="toast-container"></div>
 
   <!-- JAVASCRIPT LOGIC -->
-  <script src="/js/app.js"></script>
+  <script src="/js/app.js?v=20261014_smart_edit_v5"></script>
 </body>
 
 </html>
