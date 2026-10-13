@@ -112,6 +112,52 @@ class DatabaseManager:
                 )
             """)
 
+            # Facebook Posts Management & Commercial Tracking Table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS facebook_posts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    fb_post_id TEXT UNIQUE NOT NULL,
+                    article_id INTEGER,
+                    client_id INTEGER,
+                    client_name TEXT,
+                    post_message TEXT,
+                    post_url TEXT,
+                    image_url TEXT,
+                    payment_status TEXT DEFAULT 'UNPAID',
+                    amount REAL DEFAULT 0.0,
+                    currency TEXT DEFAULT 'EGP',
+                    payment_notes TEXT,
+                    likes_count INTEGER DEFAULT 0,
+                    comments_count INTEGER DEFAULT 0,
+                    shares_count INTEGER DEFAULT 0,
+                    reach_estimate INTEGER DEFAULT 0,
+                    published_by_name TEXT,
+                    published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (article_id) REFERENCES articles (id) ON DELETE SET NULL,
+                    FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE SET NULL
+                )
+            """)
+
+            # Smart Article Edit Backups (For Undo / Recovery)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS article_edit_backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    post_id TEXT NOT NULL,
+                    site_type TEXT NOT NULL,
+                    article_url TEXT,
+                    original_title TEXT NOT NULL,
+                    original_content TEXT NOT NULL,
+                    modified_title TEXT,
+                    modified_content TEXT,
+                    client_notes TEXT,
+                    user_id TEXT,
+                    user_name TEXT,
+                    restored INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Migration: Ensure api_key column exists in reporters table
             try:
                 cursor.execute("SELECT api_key FROM reporters LIMIT 1")
@@ -214,6 +260,16 @@ class DatabaseManager:
                 except Exception as mig_err:
                     logger.warning(f"users zai_api_key migration warning: {mig_err}")
 
+            # Migration: Ensure gender column exists in users
+            try:
+                cursor.execute("SELECT gender FROM users LIMIT 1")
+            except sqlite3.OperationalError:
+                try:
+                    cursor.execute("ALTER TABLE users ADD COLUMN gender TEXT DEFAULT ''")
+                    logger.info("Migrated users table: added gender column.")
+                except Exception as mig_err:
+                    logger.warning(f"users gender migration warning: {mig_err}")
+
             # Activation & Invitation Codes Table
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS activation_codes (
@@ -259,6 +315,48 @@ class DatabaseManager:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_acc_user_id ON accounting_transactions(user_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_acc_created_at ON accounting_transactions(created_at)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_acc_phone ON accounting_transactions(client_phone)")
+
+            # Customer Leads Table (Exclusive Chief Editor CRM)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS customer_leads (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    client_name TEXT NOT NULL,
+                    client_phone TEXT,
+                    category TEXT DEFAULT 'عام',
+                    article_title TEXT,
+                    article_url TEXT,
+                    article_id INTEGER,
+                    promoted_by_name TEXT,
+                    promoted_by_email TEXT,
+                    contact_status TEXT DEFAULT 'NEW',
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_lead_phone ON customer_leads(client_phone)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_lead_category ON customer_leads(category)")
+            # Gemini Fallback Monitoring Table (Chief Editor & Deputy Exclusive)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS gemini_fallback_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    article_title TEXT,
+                    reporter_name TEXT,
+                    reporter_id TEXT,
+                    trigger_reason TEXT,
+                    glm_model TEXT DEFAULT 'glm-4.7-flash',
+                    gemini_model TEXT DEFAULT 'gemini-3.6-flash',
+                    latency_seconds REAL DEFAULT 0.0,
+                    prompt_tokens INTEGER DEFAULT 0,
+                    completion_tokens INTEGER DEFAULT 0,
+                    total_tokens INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'SUCCESS',
+                    error_details TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gemini_fallback_created ON gemini_fallback_logs(created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_gemini_fallback_status ON gemini_fallback_logs(status)")
 
             # Migration: Ensure custom_deduction column exists in users table
             try:
@@ -338,22 +436,35 @@ class DatabaseManager:
     def get_user_by_id(self, user_id: int) -> dict:
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, username, full_name, role, email, is_active, created_at, last_login FROM users WHERE id = ?", (user_id,))
+            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
             row = cursor.fetchone()
-            return dict(row) if row else None
+            if row:
+                u = dict(row)
+                u.pop("password_hash", None)
+                return u
+            return None
 
     def get_user_by_username(self, username: str) -> dict:
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, username, full_name, role, email, is_active, created_at, last_login FROM users WHERE username = ?", (username.strip().lower(),))
+            cursor.execute("SELECT * FROM users WHERE username = ?", (username.strip().lower(),))
             row = cursor.fetchone()
-            return dict(row) if row else None
+            if row:
+                u = dict(row)
+                u.pop("password_hash", None)
+                return u
+            return None
 
     def get_all_users(self) -> list:
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, username, full_name, role, email, is_active, created_at, last_login FROM users ORDER BY id ASC")
-            return [dict(r) for r in cursor.fetchall()]
+            cursor.execute("SELECT * FROM users ORDER BY id ASC")
+            users = []
+            for r in cursor.fetchall():
+                u = dict(r)
+                u.pop("password_hash", None)
+                users.append(u)
+            return users
 
     def create_user(self, username: str, password: str, full_name: str, role: str = 'journalist', email: str = '') -> int:
         phash = self.hash_password(password)
@@ -370,8 +481,11 @@ class DatabaseManager:
         email_clean = email.strip().lower()
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (email_clean, email_clean.split("@")[0]))
+            cursor.execute("SELECT * FROM users WHERE LOWER(email) = ?", (email_clean,))
             row = cursor.fetchone()
+            if not row:
+                cursor.execute("SELECT * FROM users WHERE LOWER(username) = ? AND (email IS NULL OR email = '')", (email_clean.split("@")[0],))
+                row = cursor.fetchone()
             if row:
                 user_id = row["id"]
                 updates = ["last_login = CURRENT_TIMESTAMP"]
@@ -443,6 +557,52 @@ class DatabaseManager:
             cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
             conn.commit()
 
+    def update_user_blogger_token(self, user_id: int, token_path: str, avatar: str = "") -> bool:
+        """Assigns or updates a personal Blogger token for a specific user ID."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            updates = ["blogger_token_path = ?"]
+            vals = [token_path]
+            if avatar:
+                updates.append("google_avatar = ?")
+                vals.append(avatar)
+            vals.append(user_id)
+            cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", tuple(vals))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def update_user_identity(self, user_id: int, full_name: str, gender: str) -> dict:
+        """Updates user's official two-part full name and gender/identity in the platform."""
+        clean_name = (full_name or "").strip()
+        clean_gender = (gender or "").strip().lower()
+        if clean_gender not in ("male", "female"):
+            clean_gender = "male"
+            
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE users 
+                SET full_name = ?, gender = ?
+                WHERE id = ?
+            """, (clean_name, clean_gender, user_id))
+            
+            # Also update journalist_name in activation_codes if linked to this user's email
+            cursor.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+            u_row = cursor.fetchone()
+            if u_row and u_row["email"]:
+                cursor.execute("""
+                    UPDATE activation_codes 
+                    SET journalist_name = ?
+                    WHERE LOWER(used_by_email) = ?
+                """, (clean_name, u_row["email"].strip().lower()))
+                
+            conn.commit()
+            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+            row = cursor.fetchone()
+            user_dict = dict(row) if row else {}
+            user_dict.pop("password_hash", None)
+            return user_dict
+
     def get_user_zai_key(self, user_id: int) -> str:
         """Retrieves the journalist's personal Z.AI API key."""
         with self.get_connection() as conn:
@@ -464,7 +624,7 @@ class DatabaseManager:
     # --- Activation & Invitation Codes ---
     def create_activation_code(self, journalist_name: str, journalist_phone: str, role: str = "journalist", created_by: str = None) -> str:
         """Generates a secure, branded one-time activation code for onboarding journalists."""
-        suffix = "GOLD" if role == "editor" else ("ADMIN" if role == "admin" else "PRESS")
+        suffix = "DEPUTY" if role == "deputy_editor" else ("GOLD" if role == "editor" else ("ADMIN" if role == "admin" else "PRESS"))
         code = f"TD-{secrets.token_hex(2).upper()}{secrets.randbelow(90)+10}-{suffix}"
         
         with self.get_connection() as conn:
@@ -541,6 +701,55 @@ class DatabaseManager:
             cursor.execute("UPDATE activation_codes SET status = 'REVOKED' WHERE UPPER(code) = ? AND status = 'PENDING'", (clean_code,))
             conn.commit()
             return cursor.rowcount > 0
+
+    # --- System Settings & Feature Permissions ---
+    def get_setting(self, key: str, default: str = "") -> str:
+        """Retrieves a setting value from settings table."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+            row = cursor.fetchone()
+            return row["value"] if row else default
+
+    def set_setting(self, key: str, value: str) -> None:
+        """Saves or updates a setting in settings table."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO settings (key, value) VALUES (?, ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """, (key, str(value)))
+            conn.commit()
+
+    def get_allowed_transfer_usernames(self) -> list:
+        """Returns list of usernames explicitly allowed to promote review articles."""
+        raw = self.get_setting("allowed_transfer_usernames", "")
+        if not raw:
+            return []
+        return [u.strip().lower() for u in raw.split(",") if u.strip()]
+
+    def set_allowed_transfer_usernames(self, usernames: list) -> bool:
+        """Sets the list of usernames allowed to promote review articles."""
+        clean = [str(u).strip().lower() for u in usernames if str(u).strip()]
+        self.set_setting("allowed_transfer_usernames", ",".join(clean))
+        return True
+
+    def is_user_allowed_transfer(self, user: dict) -> bool:
+        """
+        Checks if a user is authorized to use the Review -> Main promote tool.
+        Authorized if:
+        1. User role is 'admin' or 'editor' (Editor-in-Chief / رئيس التحرير).
+        2. OR user's username is explicitly in allowed_transfer_usernames list.
+        """
+        if not user:
+            return False
+        role = (user.get("role") or "").strip().lower()
+        if role in ["admin", "deputy_editor", "editor"]:
+            return True
+        username = (user.get("username") or "").strip().lower()
+        if not username:
+            return False
+        return username in self.get_allowed_transfer_usernames()
 
     # --- Client Operations ---
     def save_client(self, name: str, phone: str, raw_data: str) -> int:
@@ -646,6 +855,38 @@ class DatabaseManager:
             cursor.execute("SELECT * FROM articles WHERE id = ?", (article_id,))
             row = cursor.fetchone()
             return dict(row) if row else None
+
+    def get_article_by_url(self, url: str) -> Optional[dict]:
+        """Finds an article by exact post_url or partial path/slug match, joining client info."""
+        if not url or not url.strip():
+            return None
+        clean_url = url.strip()
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            base_sql = """
+                SELECT a.*, c.name as client_name, c.phone as client_phone
+                FROM articles a
+                LEFT JOIN clients c ON a.client_id = c.id
+            """
+            # 1. Exact post_url match
+            cursor.execute(f"{base_sql} WHERE a.post_url = ? ORDER BY a.id DESC LIMIT 1", (clean_url,))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            # 2. Normalized match (without scheme or trailing slash)
+            norm = clean_url.replace("https://", "").replace("http://", "").rstrip("/")
+            cursor.execute(f"{base_sql} WHERE a.post_url LIKE ? ORDER BY a.id DESC LIMIT 1", (f"%{norm}%",))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            # 3. Path / slug match
+            slug_part = clean_url.split("/")[-1].replace(".html", "").strip()
+            if slug_part and len(slug_part) >= 4:
+                cursor.execute(f"{base_sql} WHERE a.slug LIKE ? OR a.post_url LIKE ? ORDER BY a.id DESC LIMIT 1", (f"%{slug_part}%", f"%{slug_part}%"))
+                row = cursor.fetchone()
+                if row:
+                    return dict(row)
+        return None
 
     def get_all_articles(self, author_email: str = None, author_name: str = None, user_id: str = None) -> list:
         with self.get_connection() as conn:
@@ -1034,12 +1275,18 @@ class DatabaseManager:
                 cursor.execute("""
                     SELECT published_at FROM articles 
                     WHERE blogger_status = 'PUBLISHED' 
+                      AND post_id IS NOT NULL 
+                      AND post_id != ''
                     ORDER BY id DESC LIMIT 1
                 """)
                 row = cursor.fetchone()
                 if row and row["published_at"]:
                     val = str(row["published_at"]).replace("Z", "").replace(" ", "T")
-                    return datetime.fromisoformat(val).timestamp()
+                    ts = datetime.fromisoformat(val).timestamp()
+                    now = time.time()
+                    # Sanity check: ignore future timestamps (clock skew) or articles older than 1 hour
+                    if 0 <= (now - ts) < 3600:
+                        return ts
         except Exception:
             pass
         return 0.0
@@ -1048,6 +1295,11 @@ class DatabaseManager:
         """Records that an article was published right now."""
         global _MEM_LAST_PUBLISH_TIME
         _MEM_LAST_PUBLISH_TIME = time.time()
+
+    def reset_publish_cooldown(self):
+        """Allows administrators to manually reset the publish cooldown timer."""
+        global _MEM_LAST_PUBLISH_TIME
+        _MEM_LAST_PUBLISH_TIME = 0.0
 
     def get_publish_cooldown_remaining(self, cooldown_seconds: int = 60) -> int:
         """
@@ -1113,7 +1365,7 @@ class DatabaseManager:
         
         # Fallback to role defaults
         settings = self.get_financial_settings()
-        if role == "admin":
+        if role in ["admin", "deputy_editor"]:
             return float(settings.get("cut_admin", 0.0))
         elif role == "editor":
             return float(settings.get("cut_premium_editor", 50.0))
@@ -1366,6 +1618,756 @@ class DatabaseManager:
                 cursor.execute("DELETE FROM accounting_transactions WHERE id = ?", (transaction_id,))
             else:
                 cursor.execute("DELETE FROM accounting_transactions WHERE id = ? AND user_id = ? AND settlement_status = 'PENDING'", (transaction_id, user_id))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    # --- Review Articles Cleanup Operations ---
+    @staticmethod
+    def _normalize_title_for_match(t: str) -> str:
+        if not t:
+            return ""
+        t = t.strip().lower()
+        t = re.sub(r'[إأآا]', 'ا', t)
+        t = re.sub(r'[ىي]', 'ي', t)
+        t = re.sub(r'ة', 'ه', t)
+        t = re.sub(r'["\'`.,:؛!?؟\-–—_()[\]{}«»]', ' ', t)
+        t = re.sub(r'\s+', ' ', t).strip()
+        return t
+
+    def get_review_dates_summary(self) -> list:
+        """
+        Retrieves a summary list of distinct dates that have review articles,
+        along with the total count of review articles for each date.
+        """
+        arabic_months = {
+            1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل", 5: "مايو", 6: "يونيو",
+            7: "يوليو", 8: "أغسطس", 9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر"
+        }
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    COALESCE(DATE(published_at), DATE(created_at)) as art_date,
+                    COUNT(*) as total_count
+                FROM articles
+                WHERE (post_url LIKE '%review%' OR blog_id IN ('3967122067465937059', '5932774642958705278'))
+                  AND (COALESCE(DATE(published_at), DATE(created_at)) IS NOT NULL)
+                GROUP BY art_date
+                ORDER BY art_date DESC
+            """)
+            results = []
+            for row in cursor.fetchall():
+                d_str = row["art_date"]
+                formatted_arabic = d_str
+                try:
+                    dt = datetime.strptime(d_str, "%Y-%m-%d")
+                    m_name = arabic_months.get(dt.month, str(dt.month))
+                    formatted_arabic = f"{dt.day} {m_name} {dt.year}"
+                except Exception:
+                    pass
+
+                results.append({
+                    "date": d_str,
+                    "date_formatted": formatted_arabic,
+                    "total_count": row["total_count"]
+                })
+            return results
+
+    def get_review_day_articles_with_main_match(self, date_str: str, blogger_service = None, token_path: Optional[str] = None) -> dict:
+        """
+        Fetches all review articles for a specific date directly from WordPress REST API (and DB),
+        pulls all Main newspaper articles in the window of the SAME DAY and the NEXT DAY,
+        and compares their titles in real-time to determine which Review articles are
+        approved/present on the Main newspaper and which should be targeted for deletion.
+        """
+        from datetime import datetime, timedelta
+
+        d = datetime.strptime(date_str, "%Y-%m-%d")
+        next_d_str = (d + timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # ── 1. GATHER ALL MAIN NEWSPAPER ARTICLES (SAME DAY + NEXT DAY WINDOW) ──
+        main_map = {}  # normalized_title -> { title, url, post_id }
+
+        # A. From WordPress API live (Main Site)
+        if blogger_service:
+            try:
+                live_main_posts = blogger_service.get_blog_posts_by_date_window(
+                    blogger_service.MAIN_BLOG_ID, date_str, days=2, token_path=token_path
+                )
+                for p in live_main_posts:
+                    norm = self._normalize_title_for_match(p.get("title", ""))
+                    if norm:
+                        main_map[norm] = {
+                            "title": p.get("title", ""),
+                            "url": p.get("url", ""),
+                            "post_id": p.get("id", "")
+                        }
+            except Exception as e:
+                logger.warning(f"Live WordPress Main query fallback to DB: {e}")
+
+        # B. From Database (articles on Main for date_str and next_d_str)
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, title, post_url, post_id, published_at FROM articles
+                WHERE post_url NOT LIKE '%review%'
+                  AND (DATE(published_at) = DATE(?) OR DATE(published_at) = DATE(?))
+            """, (date_str, next_d_str))
+            for m in cursor.fetchall():
+                norm = self._normalize_title_for_match(m["title"] or "")
+                if norm and norm not in main_map:
+                    main_map[norm] = {
+                        "title": m["title"],
+                        "url": m["post_url"],
+                        "post_id": m["post_id"]
+                    }
+
+        # ── 2. GATHER ALL REVIEW ARTICLES (WORDPRESS LIVE IS SOURCE OF TRUTH) ──
+        rev_merged = {}  # wp_post_id or str_key -> dict
+
+        # A. From WordPress API live (Review Site)
+        if blogger_service:
+            try:
+                live_rev_posts = blogger_service.get_blog_posts_by_date_window(
+                    blogger_service.REVIEW_BLOG_ID, date_str, days=1, token_path=token_path
+                )
+                for p in live_rev_posts:
+                    pid = str(p.get("id", "")).strip()
+                    if pid:
+                        rev_merged[pid] = {
+                            "id": None,
+                            "post_id": pid,
+                            "title": p.get("title", ""),
+                            "post_url": p.get("url", ""),
+                            "published_at": p.get("published", "")
+                        }
+            except Exception as e:
+                logger.warning(f"Live WordPress Review query fallback to DB: {e}")
+
+        # B. Match with / augment from local database
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, title, post_id, post_url, blogger_status, published_at, created_at
+                FROM articles
+                WHERE (post_url LIKE '%review%' OR blog_id IN ('3967122067465937059', '5932774642958705278'))
+                  AND (DATE(published_at) = DATE(?) OR (published_at IS NULL AND DATE(created_at) = DATE(?)))
+                ORDER BY id DESC
+            """, (date_str, date_str))
+            for r in cursor.fetchall():
+                r_title = r["title"] or ""
+                r_norm = self._normalize_title_for_match(r_title)
+                
+                # Check if this DB article matches an existing live WP post
+                matched_live_key = None
+                for wp_id, wp_item in rev_merged.items():
+                    if wp_item.get("title") and self._normalize_title_for_match(wp_item["title"]) == r_norm:
+                        matched_live_key = wp_id
+                        break
+                
+                if matched_live_key:
+                    rev_merged[matched_live_key]["id"] = r["id"]
+                    if not rev_merged[matched_live_key]["post_url"]:
+                        rev_merged[matched_live_key]["post_url"] = r["post_url"]
+                else:
+                    # If not in live WP posts (e.g. only in DB or older Blogger post), add with db key
+                    pid = str(r["post_id"] or "").strip()
+                    k = pid if pid.isdigit() and len(pid) < 10 else f"db_{r['id']}"
+                    if k not in rev_merged:
+                        rev_merged[k] = {
+                            "id": r["id"],
+                            "post_id": pid if (pid.isdigit() and len(pid) < 10) else "",
+                            "title": r_title,
+                            "post_url": r["post_url"],
+                            "published_at": r["published_at"] or r["created_at"]
+                        }
+
+        # ── 3. REAL-TIME MATCHING AGAINST SAME DAY + NEXT DAY MAIN ARTICLES ──
+        articles = []
+        matched_count = 0
+        unmatched_count = 0
+
+        for k, rev in rev_merged.items():
+            rev_title = rev.get("title", "")
+            norm_rev = self._normalize_title_for_match(rev_title)
+
+            matched_main = None
+            if norm_rev in main_map:
+                matched_main = main_map[norm_rev]
+            elif len(norm_rev) >= 20:
+                for m_norm, m_obj in main_map.items():
+                    if norm_rev in m_norm or m_norm in norm_rev:
+                        matched_main = m_obj
+                        break
+
+            is_on_main = bool(matched_main)
+            if is_on_main:
+                matched_count += 1
+            else:
+                unmatched_count += 1
+
+            rev["is_on_main"] = is_on_main
+            rev["main_title"] = matched_main.get("title") if matched_main else None
+            rev["main_url"] = matched_main.get("url") if matched_main else None
+            articles.append(rev)
+
+        # Sort: Unapproved first (for quick review and action), then Approved
+        articles.sort(key=lambda a: (1 if a.get("is_on_main") else 0, str(a.get("id") or a.get("post_id"))))
+
+        return {
+            "date": date_str,
+            "next_date": next_d_str,
+            "window_label": f"{date_str} و {next_d_str}",
+            "main_articles_compared_count": len(main_map),
+            "total_count": len(articles),
+            "matched_count": matched_count,
+            "unmatched_count": unmatched_count,
+            "articles": articles
+        }
+
+    def bulk_delete_review_articles(self, post_ids: list = None, article_ids: list = None) -> int:
+        """
+        Deletes review articles from the database by post_ids (Blogger IDs) and/or article_ids (DB IDs).
+        """
+        post_ids = [str(p).strip() for p in (post_ids or []) if str(p).strip()]
+        article_ids = [int(a) for a in (article_ids or []) if a]
+
+        if not post_ids and not article_ids:
+            return 0
+
+        deleted_rows = 0
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if post_ids:
+                placeholders = ",".join("?" for _ in post_ids)
+                cursor.execute(f"DELETE FROM articles WHERE post_id IN ({placeholders})", tuple(post_ids))
+                deleted_rows += cursor.rowcount
+
+            if article_ids:
+                placeholders = ",".join("?" for _ in article_ids)
+                cursor.execute(f"DELETE FROM articles WHERE id IN ({placeholders})", tuple(article_ids))
+                deleted_rows += cursor.rowcount
+
+            conn.commit()
+        return deleted_rows
+
+    # =============================================================
+    # CUSTOMER LEADS OPERATIONS (CHIEF EDITOR EXCLUSIVE CRM)
+    # =============================================================
+
+    def save_customer_lead(self, data: dict) -> int:
+        """
+        Saves or updates a customer lead silently extracted during article promotion.
+        If a lead with the same non-empty phone exists, updates it and attaches the latest article.
+        Otherwise, inserts a new record.
+        """
+        name = (data.get("client_name") or "عميل كريم").strip()
+        phone = (data.get("client_phone") or "").strip()
+        category = (data.get("category") or "عام").strip()
+        art_title = (data.get("article_title") or "").strip()
+        art_url = (data.get("article_url") or "").strip()
+        art_id = data.get("article_id")
+        promoted_by_name = (data.get("promoted_by_name") or "").strip()
+        promoted_by_email = (data.get("promoted_by_email") or "").strip()
+        notes = (data.get("notes") or "").strip()
+        status = data.get("contact_status") or "NEW"
+
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            existing_id = None
+            if phone and len(phone) >= 8:
+                cursor.execute("SELECT id FROM customer_leads WHERE client_phone = ? ORDER BY id DESC LIMIT 1", (phone,))
+                row = cursor.fetchone()
+                if row:
+                    existing_id = row[0]
+
+            if not existing_id and art_url and len(art_url) >= 10:
+                cursor.execute("SELECT id FROM customer_leads WHERE article_url = ? ORDER BY id DESC LIMIT 1", (art_url,))
+                row = cursor.fetchone()
+                if row:
+                    existing_id = row[0]
+
+            if existing_id:
+                cursor.execute("""
+                    UPDATE customer_leads
+                    SET client_name = CASE WHEN ? != '' AND ? != 'عميل كريم' THEN ? ELSE client_name END,
+                        client_phone = CASE WHEN ? != '' THEN ? ELSE client_phone END,
+                        category = CASE WHEN ? != 'عام' AND ? != 'أخبار وتقارير عامة' THEN ? ELSE category END,
+                        article_title = CASE WHEN ? != '' THEN ? ELSE article_title END,
+                        article_url = CASE WHEN ? != '' THEN ? ELSE article_url END,
+                        article_id = CASE WHEN ? IS NOT NULL THEN ? ELSE article_id END,
+                        promoted_by_name = CASE WHEN ? != '' THEN ? ELSE promoted_by_name END,
+                        promoted_by_email = CASE WHEN ? != '' THEN ? ELSE promoted_by_email END,
+                        notes = CASE WHEN ? != '' THEN ? ELSE notes END,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (
+                    name, name, name,
+                    phone, phone,
+                    category, category, category,
+                    art_title, art_title,
+                    art_url, art_url,
+                    art_id, art_id,
+                    promoted_by_name, promoted_by_name,
+                    promoted_by_email, promoted_by_email,
+                    notes, notes,
+                    existing_id
+                ))
+                conn.commit()
+                return existing_id
+            else:
+                cursor.execute("""
+                    INSERT INTO customer_leads (
+                        client_name, client_phone, category, article_title, article_url,
+                        article_id, promoted_by_name, promoted_by_email, contact_status, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (name, phone, category, art_title, art_url, art_id, promoted_by_name, promoted_by_email, status, notes))
+                conn.commit()
+                return cursor.lastrowid
+
+    def get_customer_leads(self, search: str = None, category: str = None, status: str = None, page: int = 1, limit: int = 50) -> dict:
+        """
+        Retrieves paginated customer leads with optional search, category, and status filters.
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            where_clauses = ["1=1"]
+            params = []
+
+            if search and search.strip():
+                s = f"%{search.strip()}%"
+                where_clauses.append("(client_name LIKE ? OR client_phone LIKE ? OR article_title LIKE ? OR promoted_by_name LIKE ?)")
+                params.extend([s, s, s, s])
+
+            if category and category != "الكل":
+                where_clauses.append("category = ?")
+                params.append(category.strip())
+
+            if status and status != "الكل":
+                where_clauses.append("contact_status = ?")
+                params.append(status.strip())
+
+            where_sql = " AND ".join(where_clauses)
+
+            # Count total
+            cursor.execute(f"SELECT COUNT(*) FROM customer_leads WHERE {where_sql}", tuple(params))
+            total = cursor.fetchone()[0]
+
+            # Get distinct categories
+            cursor.execute("SELECT DISTINCT category FROM customer_leads WHERE category IS NOT NULL AND category != '' ORDER BY category ASC")
+            categories = [r[0] for r in cursor.fetchall()]
+
+            # Pagination
+            offset = max(0, (page - 1) * limit)
+            query = f"SELECT * FROM customer_leads WHERE {where_sql} ORDER BY id DESC LIMIT ? OFFSET ?"
+            query_params = list(params) + [limit, offset]
+
+            cursor.execute(query, tuple(query_params))
+            leads = [dict(row) for row in cursor.fetchall()]
+
+            # Verified phones count
+            cursor.execute("SELECT COUNT(*) FROM customer_leads WHERE client_phone IS NOT NULL AND length(client_phone) >= 8")
+            verified_phones = cursor.fetchone()[0]
+
+            # Status counts across all leads
+            cursor.execute("SELECT contact_status, COUNT(*) FROM customer_leads GROUP BY contact_status")
+            sc_rows = cursor.fetchall()
+            status_counts = {"ALL": 0, "NEW": 0, "CONTACTED": 0, "VIP": 0, "NOT_INTERESTED": 0}
+            cursor.execute("SELECT COUNT(*) FROM customer_leads")
+            status_counts["ALL"] = cursor.fetchone()[0]
+            for st, cnt in sc_rows:
+                if st in status_counts:
+                    status_counts[st] = cnt
+
+            return {
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "leads": leads,
+                "categories": categories,
+                "verified_phones": verified_phones,
+                "status_counts": status_counts
+            }
+
+    def update_customer_lead(self, lead_id: int, status: str = None, notes: str = None, client_name: str = None, client_phone: str = None, category: str = None) -> bool:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            updates = []
+            params = []
+            if status is not None:
+                updates.append("contact_status = ?")
+                params.append(status.strip())
+            if notes is not None:
+                updates.append("notes = ?")
+                params.append(notes.strip())
+            if client_name is not None:
+                updates.append("client_name = ?")
+                params.append(client_name.strip())
+            if client_phone is not None:
+                updates.append("client_phone = ?")
+                params.append(client_phone.strip())
+            if category is not None:
+                updates.append("category = ?")
+                params.append(category.strip())
+
+            if not updates:
+                return False
+
+            updates.append("updated_at = CURRENT_TIMESTAMP")
+            params.append(lead_id)
+
+            sql = f"UPDATE customer_leads SET {', '.join(updates)} WHERE id = ?"
+            cursor.execute(sql, tuple(params))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def delete_customer_lead(self, lead_id: int) -> bool:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM customer_leads WHERE id = ?", (lead_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_all_customer_leads_for_export(self) -> list:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM customer_leads ORDER BY id DESC")
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_customer_lead_by_id(self, lead_id: int) -> Optional[dict]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM customer_leads WHERE id = ?", (lead_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    # ==========================================================
+    # GEMINI FALLBACK AUDIT & MONITORING METHODS
+    # ==========================================================
+
+    def log_gemini_fallback(
+        self,
+        article_title: str,
+        reporter_name: str = "",
+        reporter_id: str = "",
+        trigger_reason: str = "",
+        glm_model: str = "glm-4.7-flash",
+        gemini_model: str = "gemini-3.6-flash",
+        latency_seconds: float = 0.0,
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        total_tokens: int = 0,
+        status: str = "SUCCESS",
+        error_details: str = ""
+    ) -> int:
+        """Logs a Gemini Fallback trigger event to database."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO gemini_fallback_logs (
+                    article_title, reporter_name, reporter_id, trigger_reason,
+                    glm_model, gemini_model, latency_seconds, prompt_tokens,
+                    completion_tokens, total_tokens, status, error_details
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                article_title, reporter_name, reporter_id, trigger_reason,
+                glm_model, gemini_model, latency_seconds, prompt_tokens,
+                completion_tokens, total_tokens, status, error_details
+            ))
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_gemini_fallback_logs(
+        self,
+        page: int = 1,
+        limit: int = 25,
+        search: str = None,
+        status: str = None
+    ) -> dict:
+        """Retrieves paginated Gemini Fallback logs with optional search & status filter."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            where_clauses = ["1=1"]
+            params = []
+
+            if search and search.strip():
+                s = f"%{search.strip()}%"
+                where_clauses.append("(article_title LIKE ? OR reporter_name LIKE ? OR trigger_reason LIKE ?)")
+                params.extend([s, s, s])
+
+            if status and status != "الكل":
+                where_clauses.append("status = ?")
+                params.append(status.strip())
+
+            where_sql = " AND ".join(where_clauses)
+
+            # Total matching
+            cursor.execute(f"SELECT COUNT(*) FROM gemini_fallback_logs WHERE {where_sql}", tuple(params))
+            total = cursor.fetchone()[0]
+
+            offset = max(0, (page - 1) * limit)
+            query = f"SELECT * FROM gemini_fallback_logs WHERE {where_sql} ORDER BY id DESC LIMIT ? OFFSET ?"
+            cursor.execute(query, tuple(params + [limit, offset]))
+            logs = [dict(row) for row in cursor.fetchall()]
+
+            return {
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "logs": logs
+            }
+
+    def get_gemini_fallback_stats(self) -> dict:
+        """Calculates executive HUD metrics for Gemini Fallback dashboard."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM gemini_fallback_logs")
+            total = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM gemini_fallback_logs WHERE date(created_at, 'localtime') = date('now', 'localtime')")
+            today = cursor.fetchone()[0]
+
+            cursor.execute("SELECT AVG(latency_seconds) FROM gemini_fallback_logs WHERE status = 'SUCCESS' AND latency_seconds > 0")
+            avg_lat_row = cursor.fetchone()[0]
+            avg_latency = round(avg_lat_row, 2) if avg_lat_row is not None else 0.0
+
+            cursor.execute("SELECT COUNT(*) FROM gemini_fallback_logs WHERE status = 'SUCCESS'")
+            success_count = cursor.fetchone()[0]
+            success_rate = round((success_count / total * 100), 1) if total > 0 else 100.0
+
+            cursor.execute("SELECT SUM(total_tokens) FROM gemini_fallback_logs")
+            sum_tokens = cursor.fetchone()[0] or 0
+
+            return {
+                "total_invocations": total,
+                "today_invocations": today,
+                "avg_latency": avg_latency,
+                "success_rate": success_rate,
+                "total_tokens": sum_tokens
+            }
+
+    # =============================================================
+    # FACEBOOK POSTS & COMMERCIAL MANAGEMENT
+    # =============================================================
+
+    def save_facebook_post(self, data: dict) -> int:
+        """Saves a new Facebook post record or updates an existing one."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            fb_post_id = str(data.get("fb_post_id", "")).strip()
+            if not fb_post_id:
+                raise ValueError("fb_post_id is required")
+
+            cursor.execute("SELECT id FROM facebook_posts WHERE fb_post_id = ?", (fb_post_id,))
+            row = cursor.fetchone()
+            if row:
+                cursor.execute("""
+                    UPDATE facebook_posts
+                    SET post_message = COALESCE(?, post_message),
+                        likes_count = COALESCE(?, likes_count),
+                        comments_count = COALESCE(?, comments_count),
+                        shares_count = COALESCE(?, shares_count),
+                        reach_estimate = COALESCE(?, reach_estimate),
+                        payment_status = COALESCE(?, payment_status),
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (
+                    data.get("post_message"),
+                    data.get("likes_count"),
+                    data.get("comments_count"),
+                    data.get("shares_count"),
+                    data.get("reach_estimate"),
+                    data.get("payment_status"),
+                    row[0]
+                ))
+                conn.commit()
+                return row[0]
+            else:
+                cursor.execute("""
+                    INSERT INTO facebook_posts (
+                        fb_post_id, article_id, client_id, client_name,
+                        post_message, post_url, image_url, payment_status,
+                        amount, currency, payment_notes, likes_count,
+                        comments_count, shares_count, reach_estimate,
+                        published_by_name, published_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, (
+                    fb_post_id,
+                    data.get("article_id"),
+                    data.get("client_id"),
+                    data.get("client_name"),
+                    data.get("post_message"),
+                    data.get("post_url"),
+                    data.get("image_url"),
+                    (data.get("payment_status") or "UNPAID").upper(),
+                    float(data.get("amount") or 0.0),
+                    data.get("currency") or "EGP",
+                    data.get("payment_notes"),
+                    int(data.get("likes_count") or 0),
+                    int(data.get("comments_count") or 0),
+                    int(data.get("shares_count") or 0),
+                    int(data.get("reach_estimate") or 0),
+                    data.get("published_by_name")
+                ))
+                conn.commit()
+                return cursor.lastrowid
+
+    def update_facebook_post_payment(self, post_id: Union[int, str], payment_status: str, payment_notes: str = None, amount: float = None) -> bool:
+        """Updates payment status and notes for a Facebook post."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            status_clean = (payment_status or "UNPAID").strip().upper()
+            updates = ["payment_status = ?", "updated_at = CURRENT_TIMESTAMP"]
+            params = [status_clean]
+            if payment_notes is not None:
+                updates.append("payment_notes = ?")
+                params.append(payment_notes)
+            if amount is not None:
+                updates.append("amount = ?")
+                params.append(float(amount))
+
+            params.append(str(post_id))
+            params.append(str(post_id))
+            sql = f"UPDATE facebook_posts SET {', '.join(updates)} WHERE id = ? OR fb_post_id = ?"
+            cursor.execute(sql, tuple(params))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_facebook_posts(self, payment_status: str = None, search: str = None, page: int = 1, limit: int = 50) -> dict:
+        """Retrieves paginated Facebook posts with financial and search filters."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            where_clauses = ["1=1"]
+            params = []
+
+            if payment_status and payment_status.upper() != "ALL":
+                where_clauses.append("payment_status = ?")
+                params.append(payment_status.upper())
+
+            if search and search.strip():
+                kw = f"%{search.strip()}%"
+                where_clauses.append("(client_name LIKE ? OR post_message LIKE ? OR payment_notes LIKE ?)")
+                params.extend([kw, kw, kw])
+
+            where_sql = " AND ".join(where_clauses)
+
+            # Count total
+            cursor.execute(f"SELECT COUNT(*) FROM facebook_posts WHERE {where_sql}", tuple(params))
+            total_items = cursor.fetchone()[0]
+
+            offset = (page - 1) * limit
+            query_sql = f"""
+                SELECT * FROM facebook_posts
+                WHERE {where_sql}
+                ORDER BY id DESC
+                LIMIT ? OFFSET ?
+            """
+            cursor.execute(query_sql, tuple(params + [limit, offset]))
+            rows = cursor.fetchall()
+
+            return {
+                "total": total_items,
+                "page": page,
+                "limit": limit,
+                "posts": [dict(r) for r in rows]
+            }
+
+    def get_facebook_overview_stats(self) -> dict:
+        """Calculates executive dashboard financial and performance metrics for Facebook."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM facebook_posts")
+            total_posts = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM facebook_posts WHERE payment_status = 'PAID'")
+            paid_posts = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM facebook_posts WHERE payment_status = 'UNPAID'")
+            unpaid_posts = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM facebook_posts WHERE payment_status IN ('EDITORIAL', 'FREE')")
+            editorial_posts = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM facebook_posts WHERE payment_status = 'PAID'")
+            paid_amount = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM facebook_posts WHERE payment_status = 'UNPAID'")
+            unpaid_amount = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COALESCE(SUM(likes_count), 0), COALESCE(SUM(comments_count), 0), COALESCE(SUM(shares_count), 0) FROM facebook_posts")
+            likes_tot, comments_tot, shares_tot = cursor.fetchone()
+
+            return {
+                "total_posts": total_posts,
+                "paid_posts": paid_posts,
+                "unpaid_posts": unpaid_posts,
+                "editorial_posts": editorial_posts,
+                "paid_amount": paid_amount,
+                "unpaid_amount": unpaid_amount,
+                "total_likes": likes_tot or 0,
+                "total_comments": comments_tot or 0,
+                "total_shares": shares_tot or 0
+            }
+
+    def delete_facebook_post_record(self, post_id: Union[int, str]) -> bool:
+        """Deletes a Facebook post record from the database."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM facebook_posts WHERE id = ? OR fb_post_id = ?", (str(post_id), str(post_id)))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def save_article_edit_backup(
+        self,
+        post_id: str,
+        site_type: str,
+        article_url: str,
+        original_title: str,
+        original_content: str,
+        modified_title: str,
+        modified_content: str,
+        client_notes: str = "",
+        user_id: str = "",
+        user_name: str = ""
+    ) -> int:
+        """Saves a snapshot of an article before edit so it can be restored with 1-click Undo."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO article_edit_backups 
+                (post_id, site_type, article_url, original_title, original_content, modified_title, modified_content, client_notes, user_id, user_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                str(post_id), str(site_type), str(article_url or ""), str(original_title or ""), str(original_content or ""),
+                str(modified_title or ""), str(modified_content or ""), str(client_notes or ""), str(user_id or ""), str(user_name or "")
+            ))
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_latest_article_edit_backup(self, post_id: str, site_type: str = None) -> Optional[dict]:
+        """Retrieves the most recent backup snapshot for a post."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            if site_type:
+                cursor.execute("""
+                    SELECT * FROM article_edit_backups 
+                    WHERE post_id = ? AND site_type = ? AND restored = 0
+                    ORDER BY id DESC LIMIT 1
+                """, (str(post_id), site_type))
+            else:
+                cursor.execute("""
+                    SELECT * FROM article_edit_backups 
+                    WHERE post_id = ? AND restored = 0
+                    ORDER BY id DESC LIMIT 1
+                """, (str(post_id),))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def mark_article_edit_backup_restored(self, backup_id: int) -> bool:
+        """Marks a backup snapshot as restored."""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE article_edit_backups SET restored = 1 WHERE id = ?", (backup_id,))
             conn.commit()
             return cursor.rowcount > 0
 

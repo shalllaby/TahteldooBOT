@@ -7292,6 +7292,7 @@ window.displayGeneratedPoster = displayGeneratedPoster;
 
 let _smartEditorFetchedArticle = null;
 let _smartEditorInitialized = false;
+let _smartEditorLastBackup = null;
 
 function initSmartEditor() {
   if (_smartEditorInitialized) return;
@@ -7301,6 +7302,7 @@ function initSmartEditor() {
   const inputUrl = document.getElementById('smart-edit-url');
   const form = document.getElementById('form-smart-edit');
   const btnCopy = document.getElementById('btn-smart-edit-copy-link');
+  const btnUndo = document.getElementById('btn-smart-edit-undo');
 
   if (btnFetch) {
     btnFetch.addEventListener('click', handleSmartEditFetch);
@@ -7327,6 +7329,10 @@ function initSmartEditor() {
         });
       }
     });
+  }
+
+  if (btnUndo) {
+    btnUndo.addEventListener('click', handleSmartEditUndo);
   }
 }
 
@@ -7424,6 +7430,26 @@ async function handleSmartEditSubmit(e) {
         resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
+      // Save backup state for 1-click Undo
+      _smartEditorLastBackup = {
+        url,
+        post_id: res.post_id,
+        site_type: res.site_type,
+        original_title: res.original_title,
+        original_content: res.original_content,
+        backup_id: res.backup_id,
+        sync_both_sites: syncBoth,
+        article_url: res.article_url
+      };
+
+      const btnUndo = document.getElementById('btn-smart-edit-undo');
+      if (btnUndo) {
+        btnUndo.style.display = 'inline-flex';
+        btnUndo.disabled = false;
+      }
+      const undoBanner = document.getElementById('smart-edit-undo-banner');
+      if (undoBanner) undoBanner.style.display = 'none';
+
       const openLink = document.getElementById('smart-edit-res-open-link');
       const engineBadge = document.getElementById('smart-edit-engine-badge');
       const summaryEl = document.getElementById('smart-edit-res-summary');
@@ -7453,7 +7479,62 @@ async function handleSmartEditSubmit(e) {
   }
 }
 
+async function handleSmartEditUndo() {
+  if (!_smartEditorLastBackup) {
+    showToast('لا توجد نسخة سابقة محفوظة للتراجع عنها', 'warning');
+    return;
+  }
+
+  const confirmed = confirm('هل أنت متأكد من رغبتك في التراجع عن هذا التعديل واستعادة المقال الأصلي كما كان تماماً على الموقع؟');
+  if (!confirmed) return;
+
+  const btnUndo = document.getElementById('btn-smart-edit-undo');
+  const undoText = document.getElementById('smart-edit-undo-text');
+  const undoSpinner = document.getElementById('smart-edit-undo-spinner');
+  const undoBanner = document.getElementById('smart-edit-undo-banner');
+
+  if (undoText) undoText.textContent = 'جاري استعادة المقال الأصلي... ⏳';
+  if (undoSpinner) undoSpinner.style.display = 'inline-block';
+  if (btnUndo) btnUndo.disabled = true;
+
+  try {
+    const res = await apiCall('/api/articles/smart-edit/undo', 'POST', {
+      url: _smartEditorLastBackup.url,
+      post_id: String(_smartEditorLastBackup.post_id),
+      site_type: _smartEditorLastBackup.site_type,
+      backup_title: _smartEditorLastBackup.original_title,
+      backup_content: _smartEditorLastBackup.original_content,
+      backup_id: _smartEditorLastBackup.backup_id,
+      sync_both_sites: _smartEditorLastBackup.sync_both_sites
+    });
+
+    if (res.success) {
+      showToast('تم التراجع واستعادة المقال الأصلي بنجاح! ↩️', 'success');
+      if (undoBanner) undoBanner.style.display = 'block';
+
+      const titleEl = document.getElementById('smart-edit-res-new-title');
+      const contentEl = document.getElementById('smart-edit-res-content-html');
+      const summaryEl = document.getElementById('smart-edit-res-summary');
+
+      if (titleEl) titleEl.textContent = _smartEditorLastBackup.original_title;
+      if (contentEl) contentEl.innerHTML = _smartEditorLastBackup.original_content;
+      if (summaryEl) summaryEl.textContent = '↩️ تم التراجع: تم إلغاء التعديل واستعادة العنوان والنص الأصلي للمقال بنجاح كما كان قبل التعديل.';
+
+      if (btnUndo) btnUndo.style.display = 'none';
+    } else {
+      showToast(res.error || res.message || 'فشل التراجع عن التعديل', 'error');
+    }
+  } catch (err) {
+    showToast(err.message || 'حدث خطأ أثناء محاولة التراجع', 'error');
+  } finally {
+    if (undoText) undoText.textContent = '↩️ تراجع واستعادة الأصل (Undo)';
+    if (undoSpinner) undoSpinner.style.display = 'none';
+    if (btnUndo) btnUndo.disabled = false;
+  }
+}
+
 window.initSmartEditor = initSmartEditor;
+window.handleSmartEditUndo = handleSmartEditUndo;
 
 
 

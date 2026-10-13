@@ -1980,6 +1980,25 @@ def smart_edit_apply_article_endpoint(payload: SmartEditApplyRequest, user: dict
                 except Exception as sync_e:
                     logger.warning(f"[SmartEdit] Could not sync to sister site {sister_site}: {sync_e}")
 
+    # Save backup snapshot for 1-click Undo / Recovery
+    backup_id = None
+    if post_id and str(post_id) != "0":
+        try:
+            backup_id = db.save_article_edit_backup(
+                post_id=str(post_id),
+                site_type=site_type,
+                article_url=post_link,
+                original_title=orig_title,
+                original_content=orig_content,
+                modified_title=new_title,
+                modified_content=new_content,
+                client_notes=notes,
+                user_id=str(user.get("user_id", "")),
+                user_name=str(user.get("full_name", ""))
+            )
+        except Exception as be:
+            logger.warning(f"[SmartEdit] Failed to save backup snapshot: {be}")
+
     # Log in system logs
     log_msg = f"تعديل جراحي بالذكاء ({engine}) للمقال: '{new_title}' (ID: {post_id} - {site_type}). التعديلات: {changes_summary[:120]}"
     db.log_system("INFO", "SmartEdit", log_msg, user_id=str(user.get("user_id")), user_name=user.get("full_name"))
@@ -1990,13 +2009,111 @@ def smart_edit_apply_article_endpoint(payload: SmartEditApplyRequest, user: dict
         "engine": engine,
         "site_type": site_type,
         "post_id": post_id,
+        "backup_id": backup_id,
         "article_url": post_link,
         "original_title": orig_title,
+        "original_content": orig_content,
         "new_title": new_title,
         "changes_summary": changes_summary,
         "published": bool(payload.auto_publish),
         "synced_sister_site": synced_sister,
         "preview_html": new_content
+    }
+
+
+class SmartEditUndoRequest(BaseModel):
+    url: str
+    post_id: str
+    site_type: str = "review"
+    backup_title: Optional[str] = None
+    backup_content: Optional[str] = None
+    backup_id: Optional[int] = None
+    sync_both_sites: bool = False
+
+@app.post("/api/articles/smart-edit/undo")
+def smart_edit_undo_article_endpoint(payload: SmartEditUndoRequest, user: dict = Depends(get_current_user)):
+    """
+    Restores the original article title and content in-place if client edits need to be rolled back.
+    """
+    import urllib.parse
+    post_id = str(payload.post_id).strip()
+    site_type = payload.site_type or "review"
+    url = (payload.url or "").strip()
+
+    orig_title = payload.backup_title
+    orig_content = payload.backup_content
+    backup_rec = None
+
+    if not orig_title or not orig_content:
+        backup_rec = db.get_latest_article_edit_backup(post_id, site_type)
+        if backup_rec:
+            orig_title = orig_title or backup_rec.get("original_title")
+            orig_content = orig_content or backup_rec.get("original_content")
+
+    if not orig_title or not orig_content:
+        raise HTTPException(status_code=400, detail="لم يتم العثور على نسخة أصلية محفوظة لهذا المقال للتراجع عنها.")
+
+    # Revert post in-place on WordPress
+    up_res = blogger_service.update_post(
+        site_type=site_type,
+        post_id=post_id,
+        title=orig_title,
+        content_html=orig_content
+    )
+    if not up_res.get("success"):
+        raise HTTPException(status_code=500, detail=up_res.get("error", "فشلت استعادة المقال الأصلي على ووردبريس"))
+
+    # Revert sister site if sync_both_sites was enabled
+    synced_sister = False
+    if payload.sync_both_sites:
+        sister_site = "main" if site_type == "review" else "review"
+        sister_url = blogger_service.MAIN_SITE_URL if sister_site == "main" else blogger_service.REVIEW_SITE_URL
+        sister_headers = blogger_service.main_account.get_headers() if sister_site == "main" else blogger_service.platform_account.get_headers()
+
+        parsed_slug = ""
+        if url:
+            parsed = urllib.parse.urlparse(url)
+            slug_parts = [p for p in parsed.path.strip("/").split("/") if p]
+            parsed_slug = slug_parts[-1].replace(".html", "") if slug_parts else ""
+
+        if parsed_slug:
+            try:
+                sr = requests.get(
+                    f"{sister_url}/wp-json/wp/v2/posts",
+                    params={"slug": parsed_slug, "_fields": "id"},
+                    headers=sister_headers,
+                    timeout=8
+                )
+                if sr.status_code == 200 and sr.json():
+                    sister_post_id = str(sr.json()[0].get("id"))
+                    blogger_service.update_post(
+                        site_type=sister_site,
+                        post_id=sister_post_id,
+                        title=orig_title,
+                        content_html=orig_content
+                    )
+                    synced_sister = True
+            except Exception as se:
+                logger.warning(f"[SmartEditUndo] Could not sync undo to sister site: {se}")
+
+    if backup_rec and backup_rec.get("id"):
+        db.mark_article_edit_backup_restored(backup_rec["id"])
+    elif payload.backup_id:
+        db.mark_article_edit_backup_restored(payload.backup_id)
+
+    # Log in system logs
+    log_msg = f"تم التراجع واستعادة المقال الأصلي (Undo): '{orig_title}' (ID: {post_id} - {site_type}) بنجاح."
+    db.log_system("INFO", "SmartEditUndo", log_msg, user_id=str(user.get("user_id")), user_name=user.get("full_name"))
+
+    return {
+        "success": True,
+        "message": "تم التراجع عن التعديل واستعادة المقال الأصلي كما كان بنجاح! ↩️",
+        "post_id": post_id,
+        "site_type": site_type,
+        "article_url": up_res.get("post_url", url),
+        "title": orig_title,
+        "preview_html": orig_content,
+        "synced_sister_site": synced_sister
     }
 
 
