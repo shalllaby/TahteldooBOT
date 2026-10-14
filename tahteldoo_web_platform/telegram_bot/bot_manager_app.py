@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 جريدة تحت الضوء الإخبارية — لوحة تحكم بوت التليجرام والمحررين المستقلة
@@ -43,7 +43,7 @@ from flet_ui.theme import (
 )
 from flet_ui.components.notification import show_snack, copy_to_clipboard
 from database.db import db
-from services.blogger_service import blogger_service
+from services.wordpress_service import wordpress_service as blogger_service
 from telegram_bot.bot_controller import bot_controller
 from core.logger import logger
 
@@ -938,3 +938,4 @@ if __name__ == "__main__":
             ft.app(target=main, assets_dir="assets")
     else:
         ft.app(target=main, assets_dir="assets")
+

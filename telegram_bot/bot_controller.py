@@ -35,7 +35,8 @@ class TelegramBotController:
         retry_count = 0
         while not self._stop_requested:
             try:
-                from telegram_bot.bot import create_bot_app
+                from telegram_bot.bot import create_bot_app, ensure_webhook_deleted, BOT_TOKEN
+                ensure_webhook_deleted(BOT_TOKEN)
                 self._loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self._loop)
                 self.app = create_bot_app()
@@ -44,7 +45,7 @@ class TelegramBotController:
                     self.start_time = time.time()
                 self._started_event.set()
                 logger.info("⚡ تم تشغيل بوت تليجرام بنجاح من لوحة التحكم.")
-                self.app.run_polling(close_loop=False, stop_signals=None)
+                self.app.run_polling(close_loop=False, stop_signals=None, drop_pending_updates=True)
                 break
             except Exception as e:
                 self.last_error = str(e)

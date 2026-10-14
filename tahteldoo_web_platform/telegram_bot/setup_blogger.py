@@ -47,8 +47,8 @@ def authenticate_slot(slot: int):
     print("🌐 سيتم فتح المتصفح الآن لتسجيل الدخول بحساب Google المطلوب...")
 
     try:
-        flow = InstalledAppFlow.from_client_secrets_file(str(creds_path), SCOPES)
-        creds = flow.run_local_server(port=0)
+        from setup_blogger_accounts import execute_oauth_flow
+        creds = execute_oauth_flow(str(creds_path), SCOPES)
 
         # Save to both APP_DATA_DIR and BASE_DIR for maximum reliability
         app_data_path, base_dir_path = get_token_paths(slot)

@@ -29,7 +29,7 @@ from telegram.ext import (
 # Project dependencies
 from services.ai_service import ai_service, AIService
 from services.image_service import image_service
-from services.blogger_service import blogger_service
+from services.wordpress_service import wordpress_service
 from services.whatsapp_service import (
     whatsapp_service,
     clean_egyptian_phone,
@@ -236,7 +236,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📌 **طريقة الاستخدام:**\n"
         "1️⃣ أرسل نص الخبر أو تفاصيل العميل أولاً.\n"
         "2️⃣ سيطلب منك البوت إرفاق صورة الخبر.\n"
-        "3️⃣ سيتم صياغة الخبر بحسابك والنشر المباشر على المدونة وتوليد رابط الواتساب المخصص باسمك الفوري!\n\n"
+        "3️⃣ سيتم صياغة الخبر بحسابك والنشر المباشر على الجريدة وتوليد رابط الواتساب المخصص باسمك الفوري!\n\n"
         "💡 لتغيير اسمك: `/setname الاسم الجديد`\n"
         "💡 لتحديث كود التفعيل: `/activate كود_التفعيل`\n\n"
         "✍️ **أرسل تفاصيل الخبر الآن للبدء!**"
@@ -440,9 +440,9 @@ async def generate_and_publish_article(chat_id: int, context: ContextTypes.DEFAU
     extracted_name = session.get("extracted_name", "")
 
     if status_msg:
-        await safe_edit_message(status_msg, "⚡ **جاري صياغة الخبر بالذكاء الاصطناعي والنشر المباشر على المدونة...**")
+        await safe_edit_message(status_msg, "⚡ **جاري صياغة الخبر بالذكاء الاصطناعي والنشر المباشر على الجريدة (الريفيو)...**")
     else:
-        status_msg = await safe_send_message(context, chat_id, "⚡ **جاري صياغة الخبر بالذكاء الاصطناعي والنشر المباشر على المدونة...**")
+        status_msg = await safe_send_message(context, chat_id, "⚡ **جاري صياغة الخبر بالذكاء الاصطناعي والنشر المباشر على الجريدة (الريفيو)...**")
 
     try:
         # 1. Generate Article using reporter's dedicated AIService instance (complete user isolation, zero waiting queue)
@@ -495,26 +495,8 @@ async def generate_and_publish_article(chat_id: int, context: ContextTypes.DEFAU
 
         central_sync_service.record_publish_event()
 
-        # 3. Instant Publish to Blogger via Multi-Account Pool in BloggerService
-        if hasattr(blogger_service, "publish_article"):
-            published_post = await asyncio.to_thread(blogger_service.publish_article, article_data, use_pool=True)
-        else:
-            from services.article_formatter import ArticleFormatter
-            title = article_data.get("title", "خبر صحفي جديد")
-            content_html = ArticleFormatter.json_to_html(article_data, image_url=image_url)
-            res = await asyncio.to_thread(
-                blogger_service.publish_post,
-                title=title,
-                content_html=content_html,
-                labels=[current_label],
-                is_draft=False,
-                use_pool=True
-            )
-            published_post = {
-                "id": res.get("post_id"),
-                "url": res.get("post_url")
-            }
-            
+        # 3. Instant Publish to Review WordPress via Multi-Account Pool in WordPressService
+        published_post = await asyncio.to_thread(wordpress_service.publish_article, article_data, use_pool=True)
         post_url = published_post.get("url") or published_post.get("post_url", "")
         post_id = published_post.get("id") or published_post.get("post_id", "")
         
@@ -601,7 +583,7 @@ async def generate_and_publish_article(chat_id: int, context: ContextTypes.DEFAU
                 InlineKeyboardButton("💬 فتح محادثة الواتساب ومراسلة العميل", url=wa_link)
             ],
             [
-                InlineKeyboardButton("🌐 زيارة الخبر على المدونة", url=post_url)
+                InlineKeyboardButton("🌐 زيارة الخبر على الجريدة", url=post_url)
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -614,7 +596,7 @@ async def generate_and_publish_article(chat_id: int, context: ContextTypes.DEFAU
             sec_phones_text = f"\n⚡ **أرقام إضافية مسجلة لنفس المنظومة**: {sec_list_str}\n"
 
         success_text = (
-            f"✅ **تم نشر الخبر بنجاح على جريدة تحت الضوء!** 🎉\n"
+            f"✅ **تم نشر الخبر بنجاح على جريدة تحت الضوء (قسم المراجعة)!** 🎉\n"
             f"━━━━━━━━━━━━━━━━━━\n"
             f"📌 **العنوان**: {clean_title}\n"
             f"🏷️ **القسم**: `{current_label}`\n"
@@ -651,7 +633,11 @@ async def generate_and_publish_article(chat_id: int, context: ContextTypes.DEFAU
         except Exception:
             pass
 
-        error_txt = f"❌ حدث خطأ أثناء صياغة وتوليد الخبر: {clean_markdown_symbols(str(e))}"
+        err_str = str(e)
+        if "1113" in err_str or "余额不足" in err_str or "无可用资源包" in err_str or "请充值" in err_str or "يوجد ضغط حاليا" in err_str or "حاول مرة أخرى" in err_str or "1302" in err_str:
+            error_txt = "⏳ **حاول مرة أخرى.. يوجد ضغط حالياً**"
+        else:
+            error_txt = f"❌ حدث خطأ أثناء صياغة وتوليد الخبر: {clean_markdown_symbols(str(e))}"
         if status_msg:
             await safe_edit_message(status_msg, error_txt)
         else:
@@ -862,7 +848,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if session.get("image_url") and session.get("raw_text"):
             status_msg = await safe_edit_message(
                 query,
-                "⚡ **تم تأكيد رغبتك في إعادة النشر! جاري صياغة الخبر بالذكاء الاصطناعي والنشر المباشر على المدونة...**"
+                "⚡ **تم تأكيد رغبتك في إعادة النشر! جاري صياغة الخبر بالذكاء الاصطناعي والنشر المباشر على الجريدة (الريفيو)...**"
             )
             await generate_and_publish_article(chat_id, context, status_msg)
         else:
@@ -912,9 +898,45 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
             logger.warning(f"Transient network glitch in Telegram polling: {err_str}")
             return
 
+        # Auto-heal active webhook conflict if it occurs during polling
+        if "while webhook is active" in err_str.lower() or "deletewebhook" in err_str.lower():
+            logger.warning("⚠️ تم رصد تعارض Webhook نشط أثناء Polling. جاري الحذف التلقائي الفوري لمتابعة العمل...")
+            try:
+                if context and context.bot:
+                    asyncio.create_task(context.bot.delete_webhook(drop_pending_updates=True))
+            except Exception as dh_err:
+                logger.warning(f"تعذر استدعاء delete_webhook من معالج الخطأ: {dh_err}")
+            return
+
         db.log_bot_error(user_id, user_name, "معالجة التحديث", err_str)
     except Exception:
         pass
+
+
+def ensure_webhook_deleted(token: str):
+    """
+    Ensures that any active Telegram webhook is deleted before polling begins.
+    Prevents 'Conflict: can't use getUpdates method while webhook is active'.
+    """
+    try:
+        import urllib.request
+        import json
+        info_url = f"https://api.telegram.org/bot{token}/getWebhookInfo"
+        req = urllib.request.Request(info_url, headers={"User-Agent": "TahtElDooBot/4.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+            webhook_url = data.get("result", {}).get("url", "")
+            if webhook_url:
+                logger.warning(f"⚠️ تم اكتشاف Webhook نشط على تليجرام ({webhook_url}). جاري حذفه فوراً لتفعيل Polling...")
+                del_url = f"https://api.telegram.org/bot{token}/deleteWebhook?drop_pending_updates=true"
+                del_req = urllib.request.Request(del_url, headers={"User-Agent": "TahtElDooBot/4.0"})
+                with urllib.request.urlopen(del_req, timeout=10) as del_resp:
+                    del_data = json.loads(del_resp.read().decode())
+                    logger.info(f"✅ تم حذف Webhook تليجرام بنجاح: {del_data}")
+            else:
+                logger.info("✅ تم التحقق من تليجرام: لا يوجد Webhook نشط، وضع Polling جاهز.")
+    except Exception as e:
+        logger.warning(f"ملاحظة أثناء فحص Webhook تليجرام: {e}")
 
 
 def create_bot_app():
@@ -946,9 +968,10 @@ from telegram_bot.bot_controller import bot_controller, TelegramBotController
 def run_bot():
     """Start Telegram Bot application polling (CLI / Standalone)."""
     logger.info("⚡ جاري تفعيل بوت تليجرام لجريدة تحت الضوء...")
+    ensure_webhook_deleted(BOT_TOKEN)
     app = create_bot_app()
     logger.info("✅ البوت يعمل بنجاح وجاهز لاستقبال الطلبات!")
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":
